@@ -110,6 +110,31 @@ describe("SignInPage", () => {
     expect(email).toHaveValue("operator@verilot.local");
   });
 
+  it("moves keyboard position to the first field rejected by the API", async () => {
+    const service = {
+      loadSession: vi.fn().mockRejectedValue(authenticationRequired()),
+      signIn: vi.fn().mockRejectedValue(
+        new ApiClientError({
+          code: "VALIDATION_ERROR",
+          fieldErrors: { password: ["Use the current account password."] },
+          message: "The request contains invalid fields.",
+          status: 400,
+        }),
+      ),
+      signOut: vi.fn(),
+    } as unknown as AuthApi;
+    renderSignIn(service);
+
+    await userEvent.type(screen.getByLabelText("Email address"), "operator@verilot.local");
+    const password = screen.getByLabelText("Password");
+    await userEvent.type(password, "incorrect-password");
+    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("Use the current account password.")).toBeInTheDocument();
+    expect(password).toHaveAttribute("aria-describedby", "password-error");
+    expect(document.activeElement).toBe(password);
+  });
+
   it("blocks duplicate submission while the request is pending", async () => {
     let completeRequest: ((value: AuthSessionResponse) => void) | undefined;
     const pending = new Promise<AuthSessionResponse>((resolve) => {

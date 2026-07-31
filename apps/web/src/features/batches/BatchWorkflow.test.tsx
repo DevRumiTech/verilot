@@ -117,6 +117,11 @@ describe("batch workflow", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Create batch" }));
     const dialog = screen.getByRole("dialog", { name: "Create batch" });
+    const descriptionId = dialog.getAttribute("aria-describedby");
+    expect(descriptionId).not.toBeNull();
+    expect(document.getElementById(descriptionId ?? "")).toHaveTextContent(
+      "The API creates serialized product records only when the draft is activated.",
+    );
     await userEvent.type(within(dialog).getByLabelText("Batch code"), draftBatch.code);
     await userEvent.type(within(dialog).getByLabelText("Lot number"), draftBatch.lotNumber);
     await userEvent.type(within(dialog).getByLabelText("Product name"), draftBatch.productName);
@@ -135,12 +140,15 @@ describe("batch workflow", () => {
     expect(
       within(dialog).getByText("A batch cannot contain more than 1000 products."),
     ).toBeInTheDocument();
+    const serialEnd = within(dialog).getByLabelText("Serial end");
+    expect(serialEnd).toHaveAttribute("aria-describedby", "batch-serialEnd-error");
+    expect(document.activeElement).toBe(serialEnd);
     expect(
       fetchImplementation.mock.calls.filter(([, options]) => options?.method === "POST"),
     ).toHaveLength(0);
 
-    await userEvent.clear(within(dialog).getByLabelText("Serial end"));
-    await userEvent.type(within(dialog).getByLabelText("Serial end"), "20");
+    await userEvent.clear(serialEnd);
+    await userEvent.type(serialEnd, "20");
     expect(within(dialog).getByText("20 products")).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Create draft batch" }));
 

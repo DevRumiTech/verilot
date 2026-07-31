@@ -144,6 +144,7 @@ describe("location page", () => {
     renderResource("/locations?search=handoff&canton=FR", fetchImplementation);
 
     expect(await screen.findByText("Fribourg Handoff Hub")).toBeInTheDocument();
+    expect(screen.getByRole("rowheader", { name: "Fribourg Handoff Hub" })).toBeInTheDocument();
     expect(screen.getByText("Global")).toHaveClass("scope-marker-global");
     expect(screen.getByText("46.8065, 7.1619")).toBeInTheDocument();
 
@@ -175,6 +176,7 @@ describe("audit pages", () => {
       "href",
       "/audit/audit-one",
     );
+    expect(screen.getByRole("rowheader", { name: "Batch Activated" })).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("Action"), "BATCH_CREATED");
     await userEvent.type(screen.getByLabelText("Entity type"), "Batch");
     fireEvent.change(screen.getByLabelText("Created from"), {
@@ -186,6 +188,10 @@ describe("audit pages", () => {
     await userEvent.click(screen.getByRole("button", { name: "Apply filters" }));
 
     expect(screen.getByText("The start date must not be after the end date.")).toBeInTheDocument();
+    const createdFrom = screen.getByLabelText("Created from");
+    expect(createdFrom).toHaveAttribute("name", "createdFrom");
+    expect(createdFrom).toHaveAttribute("aria-describedby", "audit-date-error");
+    expect(document.activeElement).toBe(createdFrom);
     expect(fetchImplementation).toHaveBeenCalledTimes(1);
 
     fireEvent.change(screen.getByLabelText("Created to"), {

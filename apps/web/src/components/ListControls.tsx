@@ -108,6 +108,7 @@ export function ListControls<T extends string>({
         <input
           id="list-search"
           maxLength={100}
+          name="search"
           onChange={(event) => setSearch(event.target.value)}
           type="search"
           value={search}
@@ -117,6 +118,7 @@ export function ListControls<T extends string>({
         <label htmlFor="list-status">Status</label>
         <select
           id="list-status"
+          name="status"
           onChange={(event) => changeStatus(event.target.value)}
           value={status}
         >

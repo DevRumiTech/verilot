@@ -202,22 +202,29 @@ describe("alert workflow", () => {
     renderPage(fetchImplementation);
     expect(await screen.findByRole("button", { name: "Resolve" })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    const dismissButton = screen.getByRole("button", { name: "Dismiss" });
+    await userEvent.click(dismissButton);
     expect(screen.getByRole("dialog", { name: "Dismiss alert" })).toBeInTheDocument();
     await userEvent.keyboard("{Escape}");
     expect(screen.queryByRole("dialog", { name: "Dismiss alert" })).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(dismissButton);
 
     await userEvent.click(screen.getByRole("button", { name: "Resolve" }));
+    const dialog = screen.getByRole("dialog", { name: "Resolve alert" });
+    const descriptionId = dialog.getAttribute("aria-describedby");
+    expect(document.getElementById(descriptionId ?? "")).toHaveTextContent(
+      "Record the evidence supporting resolution.",
+    );
     await userEvent.click(screen.getByRole("button", { name: "Resolve alert" }));
     expect(screen.getByText("Enter review notes for this decision.")).toBeInTheDocument();
+    const reviewNotes = screen.getByLabelText("Review notes");
+    expect(reviewNotes).toHaveAttribute("aria-describedby", "alert-review-notes-error");
+    expect(document.activeElement).toBe(reviewNotes);
     expect(
       fetchImplementation.mock.calls.filter(([, options]) => options?.method === "POST"),
     ).toHaveLength(0);
 
-    await userEvent.type(
-      screen.getByLabelText("Review notes"),
-      "Evidence confirms the recorded route.",
-    );
+    await userEvent.type(reviewNotes, "Evidence confirms the recorded route.");
     await userEvent.click(screen.getByRole("button", { name: "Resolve alert" }));
 
     expect(

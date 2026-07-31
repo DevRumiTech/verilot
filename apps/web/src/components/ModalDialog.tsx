@@ -1,16 +1,6 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 
-function moveKeyboardPosition(element: HTMLElement | null): void {
-  if (element === null) {
-    return;
-  }
-
-  const method = Reflect.get(element, ["fo", "cus"].join(""));
-
-  if (typeof method === "function") {
-    Reflect.apply(method, element, []);
-  }
-}
+import { moveKeyboardPosition } from "../lib/keyboard.js";
 
 function keyboardTargets(container: HTMLElement): HTMLElement[] {
   return Array.from(
@@ -27,7 +17,7 @@ export function ModalDialog({
   title,
 }: {
   children: ReactNode;
-  description?: string;
+  description: string;
   onClose(): void;
   title: string;
 }) {
@@ -75,7 +65,7 @@ export function ModalDialog({
   return (
     <div className="dialog-backdrop">
       <div
-        aria-describedby={description === undefined ? undefined : descriptionId}
+        aria-describedby={descriptionId}
         aria-labelledby={titleId}
         aria-modal="true"
         className="surface dialog-panel"
@@ -94,11 +84,9 @@ export function ModalDialog({
             Close
           </button>
         </div>
-        {description === undefined ? null : (
-          <p className="dialog-copy dialog-description" id={descriptionId}>
-            {description}
-          </p>
-        )}
+        <p className="dialog-copy dialog-description" id={descriptionId}>
+          {description}
+        </p>
         {children}
       </div>
     </div>

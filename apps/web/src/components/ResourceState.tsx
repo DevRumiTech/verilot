@@ -23,7 +23,12 @@ export function LoadingState({ label = "Loading information…" }: { label?: str
 
 export function ErrorState({ error, retry }: { error: ApiClientError; retry(): void }) {
   return (
-    <section className="surface state-panel" aria-labelledby="load-error-title">
+    <section
+      aria-labelledby="load-error-title"
+      aria-live="assertive"
+      className="surface state-panel"
+      role="alert"
+    >
       <p className="eyebrow">Request error</p>
       <h2 id="load-error-title">Unable to load this view</h2>
       <p>{errorMessage(error)}</p>

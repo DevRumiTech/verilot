@@ -18,6 +18,7 @@ import { readableLabel } from "../../components/StatusBadge.js";
 import { ApiClientError } from "../../lib/api-client.js";
 import { formatDateTime } from "../../lib/formatters.js";
 import { createIdempotencyKey } from "../../lib/idempotency.js";
+import { moveKeyboardPosition } from "../../lib/keyboard.js";
 import { useApiResource } from "../../lib/use-api-resource.js";
 
 interface EventFormValues {
@@ -51,18 +52,6 @@ const FIELD_ORDER = [
 ] as const;
 
 type EventField = (typeof FIELD_ORDER)[number];
-
-function moveKeyboardPosition(element: HTMLElement | null): void {
-  if (element === null) {
-    return;
-  }
-
-  const method = Reflect.get(element, ["fo", "cus"].join(""));
-
-  if (typeof method === "function") {
-    Reflect.apply(method, element, []);
-  }
-}
 
 function readFieldErrors(error: ApiClientError): Record<string, string> {
   return Object.fromEntries(
@@ -313,6 +302,7 @@ function RecordEventDialog({
             }
             aria-invalid={fieldErrors.type === undefined ? "false" : "true"}
             id="product-event-type"
+            name="type"
             onChange={(event) => update("type", event.target.value)}
             ref={typeRef}
             required
@@ -336,6 +326,7 @@ function RecordEventDialog({
             }
             aria-invalid={fieldErrors.eventAt === undefined ? "false" : "true"}
             id="product-event-at"
+            name="eventAt"
             onChange={(event) => update("eventAt", event.target.value)}
             ref={eventAtRef}
             required
@@ -356,6 +347,7 @@ function RecordEventDialog({
               }
               aria-invalid={fieldErrors.correctedEventId === undefined ? "false" : "true"}
               id="product-corrected-event"
+              name="correctedEventId"
               onChange={(event) => update("correctedEventId", event.target.value)}
               ref={correctedEventRef}
               required
@@ -395,6 +387,7 @@ function RecordEventDialog({
             aria-invalid={fieldErrors.locationId === undefined ? "false" : "true"}
             disabled={locations.status !== "success"}
             id="product-event-location"
+            name="locationId"
             onChange={(event) => update("locationId", event.target.value)}
             ref={locationRef}
             value={values.locationId}
@@ -426,6 +419,7 @@ function RecordEventDialog({
             }
             aria-invalid={fieldErrors.transportMode === undefined ? "false" : "true"}
             id="product-event-transport"
+            name="transportMode"
             onChange={(event) => update("transportMode", event.target.value)}
             ref={transportRef}
             value={values.transportMode}
@@ -451,6 +445,7 @@ function RecordEventDialog({
             aria-invalid={fieldErrors.shipmentReference === undefined ? "false" : "true"}
             id="product-event-shipment"
             maxLength={100}
+            name="shipmentReference"
             onChange={(event) => update("shipmentReference", event.target.value)}
             ref={shipmentRef}
             value={values.shipmentReference}
@@ -469,6 +464,7 @@ function RecordEventDialog({
             aria-invalid={fieldErrors.notes === undefined ? "false" : "true"}
             id="product-event-notes"
             maxLength={1000}
+            name="notes"
             onChange={(event) => update("notes", event.target.value)}
             ref={notesRef}
             required={values.type === "BLOCKED"}

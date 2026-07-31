@@ -147,6 +147,10 @@ describe("alert pages", () => {
     expect(
       await screen.findByRole("link", { name: "Travel sequence requires review" }),
     ).toHaveAttribute("href", "/alerts/alert-one");
+    expect(
+      screen.getByRole("rowheader", { name: "Travel sequence requires review" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Search alerts")).toHaveAttribute("name", "search");
     await userEvent.type(screen.getByLabelText("Search alerts"), "travel");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
 
@@ -194,12 +198,17 @@ describe("recall pages", () => {
       .mockImplementation(() => Promise.resolve(jsonResponse({ data: recalls })));
     renderResource("/recalls", fetchImplementation);
     expect(await screen.findByRole("link", { name: "VL-REC-2026-001" })).toBeInTheDocument();
+    expect(screen.getByRole("rowheader", { name: "VL-REC-2026-001" })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Announced from"), { target: { value: "2026-08-02" } });
     fireEvent.change(screen.getByLabelText("Announced to"), { target: { value: "2026-08-01" } });
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
 
     expect(screen.getByText("The start date must not be after the end date.")).toBeInTheDocument();
+    const announcedFrom = screen.getByLabelText("Announced from");
+    expect(announcedFrom).toHaveAttribute("name", "from");
+    expect(announcedFrom).toHaveAttribute("aria-describedby", "recall-date-error");
+    expect(document.activeElement).toBe(announcedFrom);
     expect(fetchImplementation).toHaveBeenCalledTimes(1);
 
     fireEvent.change(screen.getByLabelText("Announced to"), { target: { value: "2026-08-03" } });

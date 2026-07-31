@@ -13,6 +13,7 @@ import { useSession } from "../../auth/SessionProvider.js";
 import { ModalDialog } from "../../components/ModalDialog.js";
 import { ApiClientError } from "../../lib/api-client.js";
 import { createIdempotencyKey } from "../../lib/idempotency.js";
+import { moveKeyboardPosition } from "../../lib/keyboard.js";
 
 type BatchStatusAction = "activate" | "close";
 
@@ -39,6 +40,23 @@ const EMPTY_BATCH: BatchDraftValues = {
   serialStart: "",
   sku: "",
 };
+
+const BATCH_FIELD_ORDER: readonly (keyof BatchDraftValues)[] = [
+  "code",
+  "lotNumber",
+  "productName",
+  "sku",
+  "manufacturedAt",
+  "expiresAt",
+  "serialPrefix",
+  "serialStart",
+  "serialEnd",
+];
+
+function moveToFirstBatchError(errors: Record<string, string>): void {
+  const name = BATCH_FIELD_ORDER.find((field) => errors[field] !== undefined);
+  moveKeyboardPosition(name === undefined ? null : document.getElementById(`batch-${name}`));
+}
 
 function batchErrorMessage(error: ApiClientError): string {
   if (error.status === 409 || error.status === 404) {
@@ -144,16 +162,19 @@ function BatchField({
     <div className="field">
       <label htmlFor={`batch-${name}`}>{label}</label>
       <input
+        aria-describedby={error === undefined ? undefined : `batch-${name}-error`}
         aria-invalid={error === undefined ? "false" : "true"}
         id={`batch-${name}`}
         {...(maxLength === undefined ? {} : { maxLength })}
         {...(type === "number" ? { max: 999_999, min: 1, step: 1 } : {})}
         onChange={(event) => onChange(name, event.target.value)}
+        name={name}
+        required={name !== "expiresAt"}
         type={type}
         value={value}
       />
       {error === undefined ? null : (
-        <p className="field-error" role="alert">
+        <p className="field-error" id={`batch-${name}-error`} role="alert">
           {error}
         </p>
       )}
@@ -193,6 +214,7 @@ function CreateBatchDialog({
     setServerError(null);
 
     if (Object.keys(nextErrors).length > 0) {
+      moveToFirstBatchError(nextErrors);
       return;
     }
 
@@ -233,8 +255,10 @@ function CreateBatchDialog({
       onClose();
     } catch (reasonCaught) {
       if (reasonCaught instanceof ApiClientError) {
-        setFieldErrors(readFieldErrors(reasonCaught));
+        const responseErrors = readFieldErrors(reasonCaught);
+        setFieldErrors(responseErrors);
         setServerError(batchErrorMessage(reasonCaught));
+        moveToFirstBatchError(responseErrors);
       } else {
         setServerError(
           "The batch could not be updated. Your entries have been preserved; try again.",
@@ -247,12 +271,16 @@ function CreateBatchDialog({
   }
 
   return (
-    <ModalDialog onClose={onClose} title="Create batch">
-      <form className="workflow-form workflow-form-grid" onSubmit={(event) => void submit(event)}>
-        <p className="dialog-copy span-all">
-          Define a draft and its serial bounds. The API creates serialized product records only when
-          the draft is activated.
-        </p>
+    <ModalDialog
+      description="Define a draft and its serial bounds. The API creates serialized product records only when the draft is activated."
+      onClose={onClose}
+      title="Create batch"
+    >
+      <form
+        className="workflow-form workflow-form-grid"
+        noValidate
+        onSubmit={(event) => void submit(event)}
+      >
         <BatchField
           error={fieldErrors.code}
           label="Batch code"
@@ -376,6 +404,14 @@ function ChangeBatchStatusDialog({
   const submittingRef = useRef(false);
   const [idempotencyKey] = useState(() => createIdempotencyKey(`batch-${action}`));
   const title = action === "activate" ? "Activate batch" : "Close batch";
+  const description =
+    action === "activate"
+      ? `Activate ${batch.code}? The API will create and validate ${(
+          batch.serialEnd -
+          batch.serialStart +
+          1
+        ).toLocaleString("en-CH")} serialized product records from the saved range.`
+      : `Close ${batch.code}? Closed batches remain available in traceability history.`;
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -415,17 +451,8 @@ function ChangeBatchStatusDialog({
   }
 
   return (
-    <ModalDialog onClose={onClose} title={title}>
+    <ModalDialog description={description} onClose={onClose} title={title}>
       <form className="workflow-form" onSubmit={(event) => void submit(event)}>
-        <p className="dialog-copy">
-          {action === "activate"
-            ? `Activate ${batch.code}? The API will create and validate ${(
-                batch.serialEnd -
-                batch.serialStart +
-                1
-              ).toLocaleString("en-CH")} serialized product records from the saved range.`
-            : `Close ${batch.code}? Closed batches remain available in traceability history.`}
-        </p>
         {serverError === null ? null : (
           <p className="notice" role="alert">
             {serverError}

@@ -4,7 +4,7 @@ import {
   type AuditRecordsResponse,
   type JsonValue,
 } from "@verilot/contracts";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { DetailList } from "../../components/DetailList.js";
@@ -12,6 +12,7 @@ import { Pagination, readPage } from "../../components/ListControls.js";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ResourceState.js";
 import { readableLabel, StatusBadge } from "../../components/StatusBadge.js";
 import { formatDateTime } from "../../lib/formatters.js";
+import { moveKeyboardPosition } from "../../lib/keyboard.js";
 import { useApiResource } from "../../lib/use-api-resource.js";
 
 const SENSITIVE_KEY_PARTS = [
@@ -128,6 +129,7 @@ function AuditControls() {
   const [parameters, setParameters] = useSearchParams();
   const [values, setValues] = useState<AuditControlValues>(() => readControlValues(parameters));
   const [dateError, setDateError] = useState<string | null>(null);
+  const fromInputRef = useRef<HTMLInputElement>(null);
   const hasFilters = Object.values(values).some((value) => value.trim().length > 0);
 
   useEffect(() => {
@@ -148,6 +150,7 @@ function AuditControls() {
       values.createdFrom > values.createdTo
     ) {
       setDateError("The start date must not be after the end date.");
+      moveKeyboardPosition(fromInputRef.current);
       return;
     }
 
@@ -186,6 +189,7 @@ function AuditControls() {
         <input
           id="audit-search"
           maxLength={100}
+          name="search"
           onChange={(event) => update("search", event.target.value)}
           type="search"
           value={values.search}
@@ -196,6 +200,7 @@ function AuditControls() {
         <input
           id="audit-action"
           maxLength={100}
+          name="action"
           onChange={(event) => update("action", event.target.value)}
           value={values.action}
         />
@@ -205,6 +210,7 @@ function AuditControls() {
         <input
           id="audit-entity-type"
           maxLength={80}
+          name="entityType"
           onChange={(event) => update("entityType", event.target.value)}
           value={values.entityType}
         />
@@ -214,6 +220,7 @@ function AuditControls() {
         <input
           id="audit-entity-id"
           maxLength={100}
+          name="entityId"
           onChange={(event) => update("entityId", event.target.value)}
           value={values.entityId}
         />
@@ -222,6 +229,7 @@ function AuditControls() {
         <label htmlFor="audit-actor-id">Actor identifier</label>
         <input
           id="audit-actor-id"
+          name="actorId"
           onChange={(event) => update("actorId", event.target.value)}
           value={values.actorId}
         />
@@ -231,6 +239,7 @@ function AuditControls() {
         <input
           id="audit-request-id"
           maxLength={100}
+          name="requestId"
           onChange={(event) => update("requestId", event.target.value)}
           value={values.requestId}
         />
@@ -238,8 +247,12 @@ function AuditControls() {
       <div className="field">
         <label htmlFor="audit-created-from">Created from</label>
         <input
+          aria-describedby={dateError === null ? undefined : "audit-date-error"}
+          aria-invalid={dateError === null ? "false" : "true"}
           id="audit-created-from"
+          name="createdFrom"
           onChange={(event) => update("createdFrom", event.target.value)}
+          ref={fromInputRef}
           type="date"
           value={values.createdFrom}
         />
@@ -247,14 +260,17 @@ function AuditControls() {
       <div className="field">
         <label htmlFor="audit-created-to">Created to</label>
         <input
+          aria-describedby={dateError === null ? undefined : "audit-date-error"}
+          aria-invalid={dateError === null ? "false" : "true"}
           id="audit-created-to"
+          name="createdTo"
           onChange={(event) => update("createdTo", event.target.value)}
           type="date"
           value={values.createdTo}
         />
       </div>
       {dateError === null ? null : (
-        <p className="field-error controls-error" role="alert">
+        <p className="field-error controls-error" id="audit-date-error" role="alert">
           {dateError}
         </p>
       )}
@@ -316,9 +332,9 @@ export function AuditListPage() {
                   {resource.data.auditRecords.map((record) => (
                     <tr key={record.id}>
                       <td data-label="Created">{formatDateTime(record.createdAt)}</td>
-                      <td data-label="Action">
+                      <th data-label="Action" scope="row">
                         <Link to={`/audit/${record.id}`}>{readableLabel(record.action)}</Link>
-                      </td>
+                      </th>
                       <td data-label="Entity">
                         {record.entityType} · {record.entityId}
                       </td>

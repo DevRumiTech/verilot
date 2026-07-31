@@ -147,13 +147,26 @@ describe("recall workflow", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Create recall" }));
     const dialog = await screen.findByRole("dialog", { name: "Create recall" });
-    await userEvent.selectOptions(within(dialog).getByLabelText("Active batch"), "batch-eight");
+    const descriptionId = dialog.getAttribute("aria-describedby");
+    expect(document.getElementById(descriptionId ?? "")).toHaveTextContent(
+      "marks the selected active batch and its eligible products as recalled",
+    );
+    const createButton = within(dialog).getByRole("button", { name: "Create recall" });
+    await waitFor(() => expect(createButton).toBeEnabled());
+    await userEvent.click(createButton);
+    const batchSelect = within(dialog).getByLabelText("Active batch");
+    expect(batchSelect).toHaveAttribute("aria-describedby", "recall-batch-help recall-batch-error");
+    expect(document.activeElement).toBe(batchSelect);
+    expect(
+      fetchImplementation.mock.calls.filter(([, options]) => options?.method === "POST"),
+    ).toHaveLength(0);
+    await userEvent.selectOptions(batchSelect, "batch-eight");
     await userEvent.type(within(dialog).getByLabelText("Recall reference"), "VL-REC-2026-002");
     await userEvent.type(
       within(dialog).getByLabelText("Reason"),
       "Calibration documentation requires a controlled return.",
     );
-    await userEvent.click(within(dialog).getByRole("button", { name: "Create recall" }));
+    await userEvent.click(createButton);
 
     expect(
       await screen.findByText(

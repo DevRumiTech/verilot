@@ -98,6 +98,7 @@ describe("AppShell", () => {
 
     await userEvent.keyboard("{Escape}");
     expect(menuButton).toHaveAttribute("aria-expanded", "false");
+    expect(document.activeElement).toBe(menuButton);
     expect(screen.queryByRole("navigation", { name: "Mobile navigation" })).not.toBeInTheDocument();
 
     await userEvent.click(menuButton);

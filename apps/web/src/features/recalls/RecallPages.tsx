@@ -4,7 +4,7 @@ import {
   type RecallDetailResponse,
   type RecallsResponse,
 } from "@verilot/contracts";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { DetailList } from "../../components/DetailList.js";
@@ -12,6 +12,7 @@ import { Pagination, readEnum, readPage } from "../../components/ListControls.js
 import { EmptyState, ErrorState, LoadingState } from "../../components/ResourceState.js";
 import { readableLabel, StatusBadge } from "../../components/StatusBadge.js";
 import { formatDateTime } from "../../lib/formatters.js";
+import { moveKeyboardPosition } from "../../lib/keyboard.js";
 import { useApiResource } from "../../lib/use-api-resource.js";
 import { CompleteRecallButton, CreateRecallButton } from "./RecallWorkflow.js";
 
@@ -47,6 +48,7 @@ function RecallControls() {
   const [fromInput, setFromInput] = useState(parameters.get("from") ?? "");
   const [toInput, setToInput] = useState(parameters.get("to") ?? "");
   const [dateError, setDateError] = useState<string | null>(null);
+  const fromInputRef = useRef<HTMLInputElement>(null);
   const status = readEnum(parameters, "status", RECALL_STATUSES);
 
   function update(name: string, value: string): void {
@@ -61,6 +63,7 @@ function RecallControls() {
 
     if (fromInput !== "" && toInput !== "" && fromInput > toInput) {
       setDateError("The start date must not be after the end date.");
+      moveKeyboardPosition(fromInputRef.current);
       return;
     }
 
@@ -97,6 +100,7 @@ function RecallControls() {
         <input
           id="recall-search"
           maxLength={100}
+          name="search"
           onChange={(event) => setSearch(event.target.value)}
           type="search"
           value={search}
@@ -106,6 +110,7 @@ function RecallControls() {
         <label htmlFor="recall-status">Status</label>
         <select
           id="recall-status"
+          name="status"
           onChange={(event) => update("status", event.target.value)}
           value={status}
         >
@@ -120,8 +125,12 @@ function RecallControls() {
       <div className="field">
         <label htmlFor="recall-from">Announced from</label>
         <input
+          aria-describedby={dateError === null ? undefined : "recall-date-error"}
+          aria-invalid={dateError === null ? "false" : "true"}
           id="recall-from"
+          name="from"
           onChange={(event) => setFromInput(event.target.value)}
+          ref={fromInputRef}
           type="date"
           value={fromInput}
         />
@@ -129,7 +138,10 @@ function RecallControls() {
       <div className="field">
         <label htmlFor="recall-to">Announced to</label>
         <input
+          aria-describedby={dateError === null ? undefined : "recall-date-error"}
+          aria-invalid={dateError === null ? "false" : "true"}
           id="recall-to"
+          name="to"
           onChange={(event) => setToInput(event.target.value)}
           type="date"
           value={toInput}
@@ -145,7 +157,7 @@ function RecallControls() {
           </button>
         ) : null}
       </div>
-      <p aria-live="polite" className="form-error controls-error">
+      <p aria-live="polite" className="form-error controls-error" id="recall-date-error">
         {dateError}
       </p>
     </form>
@@ -207,9 +219,9 @@ export function RecallListPage() {
                 <tbody>
                   {resource.data.recalls.map((recall) => (
                     <tr key={recall.id}>
-                      <td data-label="Reference">
+                      <th data-label="Reference" scope="row">
                         <Link to={`/recalls/${recall.id}`}>{recall.reference}</Link>
-                      </td>
+                      </th>
                       <td data-label="Batch">
                         <Link to={`/batches/${recall.batch.id}`}>{recall.batch.code}</Link>
                       </td>

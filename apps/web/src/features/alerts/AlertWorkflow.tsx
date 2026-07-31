@@ -13,6 +13,7 @@ import { ModalDialog } from "../../components/ModalDialog.js";
 import { useSession } from "../../auth/SessionProvider.js";
 import { ApiClientError } from "../../lib/api-client.js";
 import { createIdempotencyKey } from "../../lib/idempotency.js";
+import { moveKeyboardPosition } from "../../lib/keyboard.js";
 import { useApiResource } from "../../lib/use-api-resource.js";
 
 type WorkflowAction = "assign" | "dismiss" | "resolve";
@@ -34,9 +35,11 @@ function requestErrorMessage(error: ApiClientError): string {
 }
 
 function OrganizationAssigneeField({
+  error,
   onChange,
   value,
 }: {
+  error: string | undefined;
   onChange(value: string): void;
   value: string;
 }) {
@@ -58,7 +61,17 @@ function OrganizationAssigneeField({
   return (
     <div className="field">
       <label htmlFor="alert-assignee">Assign to</label>
-      <select id="alert-assignee" onChange={(event) => onChange(event.target.value)} value={value}>
+      <select
+        aria-describedby={
+          error === undefined ? "alert-assignee-help" : "alert-assignee-help alert-assignee-error"
+        }
+        aria-invalid={error === undefined ? "false" : "true"}
+        id="alert-assignee"
+        name="assignedToId"
+        onChange={(event) => onChange(event.target.value)}
+        required
+        value={value}
+      >
         {users.map((user) => (
           <option key={user.id} value={user.id}>
             {user.displayName} · {user.role.charAt(0) + user.role.slice(1).toLowerCase()}
@@ -66,18 +79,24 @@ function OrganizationAssigneeField({
         ))}
       </select>
       {resource.status === "loading" ? (
-        <p className="field-help">Loading organization users…</p>
+        <p className="field-help" id="alert-assignee-help" role="status">
+          Loading organization users…
+        </p>
       ) : null}
       {resource.status === "error" ? (
-        <p className="field-error">
+        <p className="field-error" id="alert-assignee-help" role="alert">
           The user list is unavailable. You can still assign the alert to yourself.
+        </p>
+      ) : resource.status === "success" ? (
+        <p className="field-help" id="alert-assignee-help">
+          Select an active user in your organization.
         </p>
       ) : null}
     </div>
   );
 }
 
-function SelfAssigneeField({ value }: { value: string }) {
+function SelfAssigneeField({ error, value }: { error: string | undefined; value: string }) {
   const { session } = useSession();
 
   if (session === null) {
@@ -87,10 +106,21 @@ function SelfAssigneeField({ value }: { value: string }) {
   return (
     <div className="field">
       <label htmlFor="alert-assignee">Assign to</label>
-      <select disabled id="alert-assignee" value={value}>
+      <select
+        aria-describedby={
+          error === undefined ? "alert-assignee-help" : "alert-assignee-help alert-assignee-error"
+        }
+        aria-invalid={error === undefined ? "false" : "true"}
+        disabled
+        id="alert-assignee"
+        name="assignedToId"
+        value={value}
+      >
         <option value={session.user.id}>{session.user.displayName} · Current user</option>
       </select>
-      <p className="field-help">Your role can assign this alert to your own active account.</p>
+      <p className="field-help" id="alert-assignee-help">
+        Your role can assign this alert to your own active account.
+      </p>
     </div>
   );
 }
@@ -118,6 +148,27 @@ function AlertWorkflowDialog({
   const canReadUsers = hasPermission(PERMISSIONS.usersRead);
   const title =
     action === "assign" ? "Assign alert" : action === "resolve" ? "Resolve alert" : "Dismiss alert";
+  const description =
+    action === "assign"
+      ? "Select an active organization user and optionally record an assignment reason."
+      : action === "resolve"
+        ? "Record the evidence supporting resolution."
+        : "Record why this alert does not require further investigation.";
+
+  function moveToFirstAlertError(errors: Record<string, string>): void {
+    const name = ["assignedToId", "reason", "reviewNotes"].find(
+      (field) => errors[field] !== undefined,
+    );
+    const id =
+      name === "assignedToId"
+        ? "alert-assignee"
+        : name === "reason"
+          ? "alert-assignment-reason"
+          : name === "reviewNotes"
+            ? "alert-review-notes"
+            : null;
+    moveKeyboardPosition(id === null ? null : document.getElementById(id));
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -140,6 +191,7 @@ function AlertWorkflowDialog({
     setServerError(null);
 
     if (Object.keys(nextErrors).length > 0) {
+      moveToFirstAlertError(nextErrors);
       return;
     }
 
@@ -174,14 +226,14 @@ function AlertWorkflowDialog({
       onClose();
     } catch (reasonCaught) {
       if (reasonCaught instanceof ApiClientError) {
-        setFieldErrors(
-          Object.fromEntries(
-            Object.entries(reasonCaught.fieldErrors).flatMap(([name, messages]) =>
-              messages[0] === undefined ? [] : [[name, messages[0]]],
-            ),
+        const responseErrors = Object.fromEntries(
+          Object.entries(reasonCaught.fieldErrors).flatMap(([name, messages]) =>
+            messages[0] === undefined ? [] : [[name, messages[0]]],
           ),
         );
+        setFieldErrors(responseErrors);
         setServerError(requestErrorMessage(reasonCaught));
+        moveToFirstAlertError(responseErrors);
       } else {
         setServerError(
           "The alert could not be updated. Your entries have been preserved; try again.",
@@ -194,53 +246,64 @@ function AlertWorkflowDialog({
   }
 
   return (
-    <ModalDialog onClose={onClose} title={title}>
-      <form className="workflow-form" onSubmit={(event) => void submit(event)}>
+    <ModalDialog description={description} onClose={onClose} title={title}>
+      <form className="workflow-form" noValidate onSubmit={(event) => void submit(event)}>
         {action === "assign" ? (
           <>
             {canReadUsers ? (
-              <OrganizationAssigneeField onChange={setAssigneeId} value={assigneeId} />
+              <OrganizationAssigneeField
+                error={fieldErrors.assignedToId}
+                onChange={setAssigneeId}
+                value={assigneeId}
+              />
             ) : (
-              <SelfAssigneeField value={assigneeId} />
+              <SelfAssigneeField error={fieldErrors.assignedToId} value={assigneeId} />
             )}
             {fieldErrors.assignedToId === undefined ? null : (
-              <p className="field-error" role="alert">
+              <p className="field-error" id="alert-assignee-error" role="alert">
                 {fieldErrors.assignedToId}
               </p>
             )}
             <div className="field">
               <label htmlFor="alert-assignment-reason">Assignment reason (optional)</label>
               <textarea
+                aria-describedby={
+                  fieldErrors.reason === undefined ? undefined : "alert-assignment-reason-error"
+                }
+                aria-invalid={fieldErrors.reason === undefined ? "false" : "true"}
                 id="alert-assignment-reason"
                 maxLength={1000}
+                name="reason"
                 onChange={(event) => setReason(event.target.value)}
                 rows={4}
                 value={reason}
               />
               {fieldErrors.reason === undefined ? null : (
-                <p className="field-error">{fieldErrors.reason}</p>
+                <p className="field-error" id="alert-assignment-reason-error" role="alert">
+                  {fieldErrors.reason}
+                </p>
               )}
             </div>
           </>
         ) : (
           <>
-            <p className="dialog-copy">
-              {action === "resolve"
-                ? "Record the evidence supporting resolution."
-                : "Record why this alert does not require further investigation."}
-            </p>
             <div className="field">
               <label htmlFor="alert-review-notes">Review notes</label>
               <textarea
+                aria-describedby={
+                  fieldErrors.reviewNotes === undefined ? undefined : "alert-review-notes-error"
+                }
                 aria-invalid={fieldErrors.reviewNotes === undefined ? "false" : "true"}
                 id="alert-review-notes"
                 maxLength={2000}
+                name="reviewNotes"
                 onChange={(event) => setReviewNotes(event.target.value)}
                 rows={6}
+                required
                 value={reviewNotes}
               />
               {fieldErrors.reviewNotes === undefined ? null : (
-                <p className="field-error" role="alert">
+                <p className="field-error" id="alert-review-notes-error" role="alert">
                   {fieldErrors.reviewNotes}
                 </p>
               )}

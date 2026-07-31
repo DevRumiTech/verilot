@@ -144,6 +144,7 @@ describe("product pages", () => {
       "href",
       "/products/product-one",
     );
+    expect(screen.getByRole("rowheader", { name: "VL-2026-000042" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "Thermal Control Module" })).toHaveAttribute(
       "data-label",
       "Product",
@@ -194,6 +195,7 @@ describe("batch pages", () => {
     renderResource("/batches", fetchImplementation);
 
     expect(await screen.findByRole("link", { name: "VL-BATCH-2026-003" })).toBeInTheDocument();
+    expect(screen.getByRole("rowheader", { name: "VL-BATCH-2026-003" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Next" }));
 
     await waitFor(() => {
@@ -235,6 +237,7 @@ describe("batch pages", () => {
     renderResource("/batches/batch-three", fetchImplementation);
 
     expect(await screen.findByText("The requested information was not found.")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveAttribute("aria-live", "assertive");
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("heading", { name: "VL-BATCH-2026-003" })).toBeInTheDocument();
   });

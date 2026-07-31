@@ -100,6 +100,7 @@ function LocationControls() {
         <input
           id="location-search"
           maxLength={100}
+          name="search"
           onChange={(event) => setSearch(event.target.value)}
           type="search"
           value={search}
@@ -109,6 +110,7 @@ function LocationControls() {
         <label htmlFor="location-canton">Canton</label>
         <select
           id="location-canton"
+          name="canton"
           onChange={(event) => changeCanton(event.target.value)}
           value={validCanton}
         >
@@ -175,7 +177,9 @@ export function LocationListPage() {
               <tbody>
                 {resource.data.locations.map((location) => (
                   <tr key={location.id}>
-                    <td data-label="Location">{location.name}</td>
+                    <th data-label="Location" scope="row">
+                      {location.name}
+                    </th>
                     <td data-label="Code">{location.code}</td>
                     <td data-label="Municipality">{location.municipality}</td>
                     <td data-label="Canton">{location.canton}</td>

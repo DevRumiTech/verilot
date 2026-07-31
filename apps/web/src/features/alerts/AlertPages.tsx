@@ -85,6 +85,7 @@ function AlertControls() {
         <input
           id="alert-search"
           maxLength={100}
+          name="search"
           onChange={(event) => setSearch(event.target.value)}
           type="search"
           value={search}
@@ -94,6 +95,7 @@ function AlertControls() {
         <label htmlFor="alert-status">Status</label>
         <select
           id="alert-status"
+          name="status"
           onChange={(event) => update("status", event.target.value)}
           value={status}
         >
@@ -109,6 +111,7 @@ function AlertControls() {
         <label htmlFor="alert-severity">Severity</label>
         <select
           id="alert-severity"
+          name="severity"
           onChange={(event) => update("severity", event.target.value)}
           value={severity}
         >
@@ -124,6 +127,7 @@ function AlertControls() {
         <label htmlFor="alert-rule">Rule</label>
         <select
           id="alert-rule"
+          name="rule"
           onChange={(event) => update("rule", event.target.value)}
           value={rule}
         >
@@ -191,9 +195,9 @@ export function AlertListPage() {
                 <tbody>
                   {resource.data.alerts.map((alert) => (
                     <tr key={alert.id}>
-                      <td data-label="Alert">
+                      <th data-label="Alert" scope="row">
                         <Link to={`/alerts/${alert.id}`}>{alert.title}</Link>
-                      </td>
+                      </th>
                       <td data-label="Severity">
                         <StatusBadge value={alert.severity} />
                       </td>

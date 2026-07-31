@@ -66,9 +66,9 @@ export function ProductListPage() {
                 <tbody>
                   {resource.data.products.map((product) => (
                     <tr key={product.id}>
-                      <td data-label="Serial number">
+                      <th data-label="Serial number" scope="row">
                         <Link to={`/products/${product.id}`}>{product.serialNumber}</Link>
-                      </td>
+                      </th>
                       <td data-label="Product">{product.batch.productName}</td>
                       <td data-label="Batch">
                         <Link to={`/batches/${product.batch.id}`}>{product.batch.code}</Link>

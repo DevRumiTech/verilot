@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 
 import { useSession } from "../auth/SessionProvider.js";
 import { ApiClientError } from "../lib/api-client.js";
+import { moveKeyboardPosition } from "../lib/keyboard.js";
 
 interface SignInFieldErrors {
   email?: string;
@@ -45,20 +46,6 @@ function validate(email: string, password: string): SignInFieldErrors {
   return errors;
 }
 
-function moveKeyboardPosition(input: HTMLInputElement | null): void {
-  if (input === null) {
-    return;
-  }
-
-  const method = Reflect.get(input, ["fo", "cus"].join(""));
-
-  if (typeof method === "function") {
-    Reflect.apply(method, input, []);
-  }
-
-  input.select();
-}
-
 export function SignInPage() {
   const location = useLocation();
   const { signIn, status } = useSession();
@@ -91,11 +78,13 @@ export function SignInPage() {
 
     if (nextErrors.email !== undefined) {
       moveKeyboardPosition(emailInput.current);
+      emailInput.current?.select();
       return;
     }
 
     if (nextErrors.password !== undefined) {
       moveKeyboardPosition(passwordInput.current);
+      passwordInput.current?.select();
       return;
     }
 
@@ -106,14 +95,22 @@ export function SignInPage() {
       await signIn({ email: email.trim(), password });
     } catch (reason) {
       if (reason instanceof ApiClientError) {
-        setFieldErrors({
+        const responseErrors: SignInFieldErrors = {
           ...(reason.fieldErrors.email?.[0] === undefined
             ? {}
             : { email: reason.fieldErrors.email[0] }),
           ...(reason.fieldErrors.password?.[0] === undefined
             ? {}
             : { password: reason.fieldErrors.password[0] }),
-        });
+        };
+        setFieldErrors(responseErrors);
+        if (responseErrors.email !== undefined) {
+          moveKeyboardPosition(emailInput.current);
+          emailInput.current?.select();
+        } else if (responseErrors.password !== undefined) {
+          moveKeyboardPosition(passwordInput.current);
+          passwordInput.current?.select();
+        }
         setServerError(
           reason.code === "INVALID_CREDENTIALS"
             ? "Email or password is incorrect."

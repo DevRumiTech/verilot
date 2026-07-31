@@ -72,9 +72,9 @@ export function BatchListPage() {
                 <tbody>
                   {resource.data.batches.map((batch) => (
                     <tr key={batch.id}>
-                      <td data-label="Batch code">
+                      <th data-label="Batch code" scope="row">
                         <Link to={`/batches/${batch.id}`}>{batch.code}</Link>
-                      </td>
+                      </th>
                       <td data-label="Product">{batch.productName}</td>
                       <td data-label="Lot number">{batch.lotNumber}</td>
                       <td data-label="Status">

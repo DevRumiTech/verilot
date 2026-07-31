@@ -1,8 +1,9 @@
 import { PERMISSIONS, type Permission } from "@verilot/contracts";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { useSession } from "../auth/SessionProvider.js";
+import { moveKeyboardPosition } from "../lib/keyboard.js";
 
 interface NavigationItem {
   label: string;
@@ -63,6 +64,7 @@ export function AppShell() {
   const { session, signOut } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -71,7 +73,9 @@ export function AppShell() {
 
     function closeOnEscape(event: KeyboardEvent): void {
       if (event.key === "Escape") {
+        event.preventDefault();
         setMenuOpen(false);
+        moveKeyboardPosition(menuButton.current);
       }
     }
 
@@ -126,6 +130,7 @@ export function AppShell() {
           aria-expanded={menuOpen}
           className="menu-button"
           onClick={() => setMenuOpen((current) => !current)}
+          ref={menuButton}
           type="button"
         >
           <span aria-hidden="true">☰</span>
@@ -134,7 +139,12 @@ export function AppShell() {
       </header>
 
       {menuOpen ? (
-        <div className="mobile-drawer surface" id="mobile-menu">
+        <div
+          aria-label="Mobile menu"
+          className="mobile-drawer surface"
+          id="mobile-menu"
+          role="region"
+        >
           <Navigation closeMenu={() => setMenuOpen(false)} label="Mobile navigation" />
           <div className="mobile-account">
             <strong>{session.user.displayName}</strong>
