@@ -20,5 +20,6 @@ export const API_PATHS = {
 
 export const SYSTEM_PATHS = {
   docs: "/api/docs",
+  openApi: "/api/openapi.json",
   health: "/api/health",
 } as const;
