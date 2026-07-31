@@ -391,6 +391,22 @@ button:disabled {
   color: var(--graphite-700);
 }
 
+.page-header-action {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-header-action h1 {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.page-header-action p:last-child {
+  margin-bottom: 0;
+  color: var(--graphite-700);
+}
+
 .empty-state {
   padding: clamp(1.25rem, 4vw, 2rem);
 }
@@ -856,6 +872,12 @@ button:disabled {
   gap: 0.5rem;
 }
 
+.detail-action-row {
+  display: flex;
+  justify-content: end;
+  margin-top: 1rem;
+}
+
 .dialog-backdrop {
   position: fixed;
   z-index: 20;
@@ -1257,6 +1279,7 @@ button:disabled {
 
   .pagination,
   .detail-page-header,
+  .page-header-action,
   .detail-heading,
   .timeline-heading,
   .workflow-panel {

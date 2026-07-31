@@ -13,6 +13,7 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/ResourceS
 import { readableLabel, StatusBadge } from "../../components/StatusBadge.js";
 import { formatDateTime } from "../../lib/formatters.js";
 import { useApiResource } from "../../lib/use-api-resource.js";
+import { CompleteRecallButton, CreateRecallButton } from "./RecallWorkflow.js";
 
 function toIsoDate(value: string, endOfDay = false): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -154,14 +155,28 @@ function RecallControls() {
 export function RecallListPage() {
   const [parameters] = useSearchParams();
   const resource = useApiResource<RecallsResponse>(recallListPath(parameters));
+  const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
+
+  function handleWorkflowComplete(message: string): void {
+    setWorkflowMessage(message);
+    resource.retry();
+  }
 
   return (
     <section className="page" aria-labelledby="page-title">
-      <header className="page-header">
-        <p className="eyebrow">Batch response</p>
-        <h1 id="page-title">Recalls</h1>
-        <p>Track announced actions, affected lots, product totals, and completion state.</p>
+      <header className="page-header page-header-action">
+        <div>
+          <p className="eyebrow">Batch response</p>
+          <h1 id="page-title">Recalls</h1>
+          <p>Track announced actions, affected lots, product totals, and completion state.</p>
+        </div>
+        <CreateRecallButton onComplete={handleWorkflowComplete} />
       </header>
+      {workflowMessage === null ? null : (
+        <p className="notice success-notice" role="status">
+          {workflowMessage}
+        </p>
+      )}
       <RecallControls />
       {resource.status === "loading" ? <LoadingState label="Loading recalls…" /> : null}
       {resource.status === "error" ? (
@@ -224,6 +239,12 @@ export function RecallListPage() {
 export function RecallDetailPage() {
   const { recallId = "" } = useParams();
   const resource = useApiResource<RecallDetailResponse>(`${API_PATHS.recalls}/${recallId}`);
+  const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
+
+  function handleWorkflowComplete(message: string): void {
+    setWorkflowMessage(message);
+    resource.retry();
+  }
 
   return (
     <section className="page" aria-labelledby="page-title">
@@ -236,52 +257,65 @@ export function RecallDetailPage() {
           Back to recalls
         </Link>
       </header>
+      {workflowMessage === null ? null : (
+        <p className="notice success-notice" role="status">
+          {workflowMessage}
+        </p>
+      )}
       {resource.status === "loading" ? <LoadingState label="Loading recall…" /> : null}
       {resource.status === "error" ? (
         <ErrorState error={resource.error} retry={resource.retry} />
       ) : null}
       {resource.status === "success" ? (
-        <section className="surface detail-card" aria-labelledby="recall-overview-title">
-          <div className="detail-heading">
-            <div>
-              <p className="eyebrow">{resource.data.recall.batch.productName}</p>
-              <h2 id="recall-overview-title">{resource.data.recall.reference}</h2>
+        <>
+          <section className="surface detail-card" aria-labelledby="recall-overview-title">
+            <div className="detail-heading">
+              <div>
+                <p className="eyebrow">{resource.data.recall.batch.productName}</p>
+                <h2 id="recall-overview-title">{resource.data.recall.reference}</h2>
+              </div>
+              <StatusBadge value={resource.data.recall.status} />
             </div>
-            <StatusBadge value={resource.data.recall.status} />
+            <p className="detail-summary">{resource.data.recall.reason}</p>
+            <DetailList
+              items={[
+                {
+                  label: "Batch",
+                  value: (
+                    <Link to={`/batches/${resource.data.recall.batch.id}`}>
+                      {resource.data.recall.batch.code}
+                    </Link>
+                  ),
+                },
+                { label: "Lot number", value: resource.data.recall.batch.lotNumber },
+                { label: "SKU", value: resource.data.recall.batch.sku },
+                { label: "Announced", value: formatDateTime(resource.data.recall.announcedAt) },
+                {
+                  label: "Completed",
+                  value:
+                    resource.data.recall.completedAt === null
+                      ? "Not completed"
+                      : formatDateTime(resource.data.recall.completedAt),
+                },
+                { label: "Created by", value: resource.data.recall.createdBy.displayName },
+                {
+                  label: "Affected products",
+                  value: resource.data.recall.productCount.toLocaleString("en-CH"),
+                },
+                {
+                  label: "Recall custody records",
+                  value: resource.data.recall.custodyEventCount.toLocaleString("en-CH"),
+                },
+              ]}
+            />
+          </section>
+          <div className="detail-action-row">
+            <CompleteRecallButton
+              onComplete={handleWorkflowComplete}
+              recall={resource.data.recall}
+            />
           </div>
-          <p className="detail-summary">{resource.data.recall.reason}</p>
-          <DetailList
-            items={[
-              {
-                label: "Batch",
-                value: (
-                  <Link to={`/batches/${resource.data.recall.batch.id}`}>
-                    {resource.data.recall.batch.code}
-                  </Link>
-                ),
-              },
-              { label: "Lot number", value: resource.data.recall.batch.lotNumber },
-              { label: "SKU", value: resource.data.recall.batch.sku },
-              { label: "Announced", value: formatDateTime(resource.data.recall.announcedAt) },
-              {
-                label: "Completed",
-                value:
-                  resource.data.recall.completedAt === null
-                    ? "Not completed"
-                    : formatDateTime(resource.data.recall.completedAt),
-              },
-              { label: "Created by", value: resource.data.recall.createdBy.displayName },
-              {
-                label: "Affected products",
-                value: resource.data.recall.productCount.toLocaleString("en-CH"),
-              },
-              {
-                label: "Recall custody records",
-                value: resource.data.recall.custodyEventCount.toLocaleString("en-CH"),
-              },
-            ]}
-          />
-        </section>
+        </>
       ) : null}
     </section>
   );
