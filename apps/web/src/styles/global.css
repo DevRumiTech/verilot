@@ -230,6 +230,18 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.success-notice {
+  border-color: #c9c9c7;
+  color: var(--graphite-900);
+  background: var(--white);
+}
+
+.field-help {
+  margin: 0;
+  color: var(--graphite-500);
+  font-size: 0.76rem;
+}
+
 .button {
   display: inline-flex;
   min-height: 2.65rem;
@@ -813,6 +825,86 @@ button:disabled {
   margin-top: 1rem;
 }
 
+.workflow-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.workflow-panel .eyebrow {
+  margin-top: 0;
+}
+
+.workflow-panel h2 {
+  margin: 0.2rem 0;
+  font-size: 1.05rem;
+}
+
+.workflow-panel p:last-child {
+  margin: 0;
+  color: var(--graphite-700);
+  font-size: 0.8rem;
+}
+
+.workflow-actions,
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  background: rgb(32 33 36 / 50%);
+  padding: 1rem;
+  place-items: center;
+}
+
+.dialog-panel {
+  width: min(100%, 34rem);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: clamp(1rem, 4vw, 1.5rem);
+}
+
+.dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--grey-200);
+  padding-bottom: 0.8rem;
+}
+
+.dialog-heading h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.dialog-close {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.workflow-form {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.dialog-copy {
+  margin: 0;
+  color: var(--graphite-700);
+  font-size: 0.85rem;
+}
+
 .timeline {
   margin: 0;
   padding: 0.5rem 0 0;
@@ -1166,7 +1258,8 @@ button:disabled {
   .pagination,
   .detail-page-header,
   .detail-heading,
-  .timeline-heading {
+  .timeline-heading,
+  .workflow-panel {
     align-items: stretch;
     flex-direction: column;
   }

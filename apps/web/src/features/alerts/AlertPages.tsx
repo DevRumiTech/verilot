@@ -15,6 +15,7 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/ResourceS
 import { readableLabel, StatusBadge } from "../../components/StatusBadge.js";
 import { formatDateTime } from "../../lib/formatters.js";
 import { useApiResource } from "../../lib/use-api-resource.js";
+import { AlertWorkflow } from "./AlertWorkflow.js";
 
 function alertListPath(parameters: URLSearchParams): string {
   const query = new URLSearchParams({ page: String(readPage(parameters)), pageSize: "20" });
@@ -228,7 +229,13 @@ export function AlertListPage() {
   );
 }
 
-function AlertDetailContent({ response }: { response: AlertDetailResponse }) {
+function AlertDetailContent({
+  onWorkflowComplete,
+  response,
+}: {
+  onWorkflowComplete(message: string): void;
+  response: AlertDetailResponse;
+}) {
   const alert = response.alert;
 
   return (
@@ -260,6 +267,8 @@ function AlertDetailContent({ response }: { response: AlertDetailResponse }) {
           ]}
         />
       </section>
+
+      <AlertWorkflow alert={alert} onComplete={onWorkflowComplete} />
 
       <div className="detail-grid">
         <section className="surface panel" aria-labelledby="alert-links-title">
@@ -314,6 +323,12 @@ function AlertDetailContent({ response }: { response: AlertDetailResponse }) {
 export function AlertDetailPage() {
   const { alertId = "" } = useParams();
   const resource = useApiResource<AlertDetailResponse>(`${API_PATHS.alerts}/${alertId}`);
+  const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
+
+  function handleWorkflowComplete(message: string): void {
+    setWorkflowMessage(message);
+    resource.retry();
+  }
 
   return (
     <section className="page" aria-labelledby="page-title">
@@ -326,11 +341,18 @@ export function AlertDetailPage() {
           Back to alerts
         </Link>
       </header>
+      {workflowMessage === null ? null : (
+        <p className="notice success-notice" role="status">
+          {workflowMessage}
+        </p>
+      )}
       {resource.status === "loading" ? <LoadingState label="Loading alert…" /> : null}
       {resource.status === "error" ? (
         <ErrorState error={resource.error} retry={resource.retry} />
       ) : null}
-      {resource.status === "success" ? <AlertDetailContent response={resource.data} /> : null}
+      {resource.status === "success" ? (
+        <AlertDetailContent onWorkflowComplete={handleWorkflowComplete} response={resource.data} />
+      ) : null}
     </section>
   );
 }
