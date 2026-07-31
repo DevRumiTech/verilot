@@ -14,6 +14,7 @@
     "db:seed": "npm run db:seed --workspace @verilot/api",
     "dev": "npm run dev:server",
     "dev:server": "npm run dev --workspace @verilot/api",
+    "dev:web": "npm run dev --workspace @verilot/web",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test --workspaces --if-present",
