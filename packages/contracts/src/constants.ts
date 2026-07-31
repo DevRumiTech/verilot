@@ -14,6 +14,7 @@ export const API_PATHS = {
     logout: `${API_PREFIX}/auth/logout`,
     session: `${API_PREFIX}/auth/session`,
   },
+  users: `${API_PREFIX}/users`,
   verification: `${API_PREFIX}/verification`,
 } as const;
 
