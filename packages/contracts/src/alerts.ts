@@ -99,3 +99,29 @@ export interface AlertsResponse {
 export interface AlertDetailResponse {
   alert: AlertDetail;
 }
+
+export interface AssignAlertRequest {
+  assignedToId: string;
+  idempotencyKey: string;
+  reason?: string;
+}
+
+export interface DecideAlertRequest {
+  idempotencyKey: string;
+  reviewNotes: string;
+}
+
+export interface AlertWorkflowState {
+  assignedTo: AlertUserReference | null;
+  decisionAt: string | null;
+  id: string;
+  resolvedBy: AlertUserReference | null;
+  reviewNotes: string | null;
+  status: AlertStatus;
+  updatedAt: string;
+}
+
+export interface AlertWorkflowMutationResponse {
+  alert: AlertWorkflowState;
+  replayed: boolean;
+}

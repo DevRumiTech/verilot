@@ -386,6 +386,165 @@ export const openApiDocument = {
         tags: ["Alerts"],
       },
     },
+    [`${API_PATHS.alerts}/{alertId}/assign`]: {
+      post: {
+        description:
+          "Requires trusted browser origin, session authentication, CSRF validation, and alerts:manage permission.",
+        operationId: "assignAlert",
+        parameters: [
+          {
+            in: "path",
+            name: "alertId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/AssignAlertRequest",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AlertWorkflowEnvelope",
+                },
+              },
+            },
+            description: "Alert assignment or idempotent replay returned.",
+          },
+          "400": errorResponse("Request data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Origin, CSRF token, or permission rejected."),
+          "404": errorResponse("Alert or assignment target not found."),
+          "409": errorResponse("Transition or idempotency conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Assign an alert",
+        tags: ["Alerts"],
+      },
+    },
+    [`${API_PATHS.alerts}/{alertId}/resolve`]: {
+      post: {
+        description:
+          "Requires trusted browser origin, session authentication, CSRF validation, and alerts:manage permission.",
+        operationId: "resolveAlert",
+        parameters: [
+          {
+            in: "path",
+            name: "alertId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/DecideAlertRequest",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AlertWorkflowEnvelope",
+                },
+              },
+            },
+            description: "Alert resolution or idempotent replay returned.",
+          },
+          "400": errorResponse("Request data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Origin, CSRF token, or permission rejected."),
+          "404": errorResponse("Alert not found."),
+          "409": errorResponse("Transition or idempotency conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Resolve an alert",
+        tags: ["Alerts"],
+      },
+    },
+    [`${API_PATHS.alerts}/{alertId}/dismiss`]: {
+      post: {
+        description:
+          "Requires trusted browser origin, session authentication, CSRF validation, and alerts:manage permission.",
+        operationId: "dismissAlert",
+        parameters: [
+          {
+            in: "path",
+            name: "alertId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/DecideAlertRequest",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AlertWorkflowEnvelope",
+                },
+              },
+            },
+            description: "Alert dismissal or idempotent replay returned.",
+          },
+          "400": errorResponse("Request data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Origin, CSRF token, or permission rejected."),
+          "404": errorResponse("Alert not found."),
+          "409": errorResponse("Transition or idempotency conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Dismiss an alert",
+        tags: ["Alerts"],
+      },
+    },
     [API_PATHS.recalls]: {
       get: {
         operationId: "listRecalls",
@@ -1549,6 +1708,127 @@ export const openApiDocument = {
             type: "object",
           },
         ],
+      },
+      AssignAlertRequest: {
+        additionalProperties: false,
+        properties: {
+          assignedToId: {
+            format: "uuid",
+            type: "string",
+          },
+          idempotencyKey: {
+            maxLength: 120,
+            minLength: 8,
+            pattern: "^[A-Za-z0-9._:-]+$",
+            type: "string",
+          },
+          reason: {
+            maxLength: 1000,
+            minLength: 1,
+            type: "string",
+          },
+        },
+        required: ["assignedToId", "idempotencyKey"],
+        type: "object",
+      },
+      DecideAlertRequest: {
+        additionalProperties: false,
+        properties: {
+          idempotencyKey: {
+            maxLength: 120,
+            minLength: 8,
+            pattern: "^[A-Za-z0-9._:-]+$",
+            type: "string",
+          },
+          reviewNotes: {
+            maxLength: 2000,
+            minLength: 1,
+            type: "string",
+          },
+        },
+        required: ["idempotencyKey", "reviewNotes"],
+        type: "object",
+      },
+      AlertWorkflowState: {
+        additionalProperties: false,
+        properties: {
+          assignedTo: {
+            oneOf: [
+              {
+                $ref: "#/components/schemas/AlertUserReference",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          decisionAt: {
+            oneOf: [
+              {
+                format: "date-time",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          resolvedBy: {
+            oneOf: [
+              {
+                $ref: "#/components/schemas/AlertUserReference",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          reviewNotes: {
+            type: ["null", "string"],
+          },
+          status: {
+            enum: ALERT_STATUSES,
+            type: "string",
+          },
+          updatedAt: {
+            format: "date-time",
+            type: "string",
+          },
+        },
+        required: [
+          "assignedTo",
+          "decisionAt",
+          "id",
+          "resolvedBy",
+          "reviewNotes",
+          "status",
+          "updatedAt",
+        ],
+        type: "object",
+      },
+      AlertWorkflowEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              alert: {
+                $ref: "#/components/schemas/AlertWorkflowState",
+              },
+              replayed: {
+                type: "boolean",
+              },
+            },
+            required: ["alert", "replayed"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
       },
       AlertsEnvelope: {
         additionalProperties: false,
