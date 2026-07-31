@@ -6,6 +6,7 @@ import {
   APPLICATION_NAME,
   AUTH_COOKIE_NAME,
   CSRF_HEADER_NAME,
+  RECALL_STATUSES,
   SYSTEM_PATHS,
 } from "@verilot/contracts";
 
@@ -74,6 +75,10 @@ export const openApiDocument = {
     {
       description: "Organization alert records.",
       name: "Alerts",
+    },
+    {
+      description: "Organization recall records.",
+      name: "Recalls",
     },
     {
       description: "Organization batch records.",
@@ -375,6 +380,135 @@ export const openApiDocument = {
         ],
         summary: "Get organization alert",
         tags: ["Alerts"],
+      },
+    },
+    [API_PATHS.recalls]: {
+      get: {
+        operationId: "listRecalls",
+        parameters: [
+          {
+            in: "query",
+            name: "page",
+            schema: {
+              default: 1,
+              maximum: 10_000,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "pageSize",
+            schema: {
+              default: 20,
+              maximum: 100,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "status",
+            schema: {
+              enum: RECALL_STATUSES,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "batchId",
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "announcedFrom",
+            schema: {
+              format: "date-time",
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "announcedTo",
+            schema: {
+              format: "date-time",
+              type: "string",
+            },
+          },
+          {
+            description: "Match recall reference, reason, or batch fields.",
+            in: "query",
+            name: "search",
+            schema: {
+              maxLength: 100,
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/RecallsEnvelope",
+                },
+              },
+            },
+            description: "Organization recalls returned.",
+          },
+          "400": errorResponse("Query values rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "List organization recalls",
+        tags: ["Recalls"],
+      },
+    },
+    [`${API_PATHS.recalls}/{recallId}`]: {
+      get: {
+        operationId: "getRecall",
+        parameters: [
+          {
+            in: "path",
+            name: "recallId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/RecallEnvelope",
+                },
+              },
+            },
+            description: "Organization recall returned.",
+          },
+          "400": errorResponse("Recall identifier rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+          "404": errorResponse("Recall not found."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "Get organization recall",
+        tags: ["Recalls"],
       },
     },
     [API_PATHS.batches]: {
@@ -1284,6 +1418,151 @@ export const openApiDocument = {
               },
             },
             required: ["alert"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      RecallBatchReference: {
+        additionalProperties: false,
+        properties: {
+          code: {
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          lotNumber: {
+            type: "string",
+          },
+          productName: {
+            type: "string",
+          },
+          sku: {
+            type: "string",
+          },
+          status: {
+            enum: ["DRAFT", "ACTIVE", "RECALLED", "CLOSED"],
+            type: "string",
+          },
+        },
+        required: ["code", "id", "lotNumber", "productName", "sku", "status"],
+        type: "object",
+      },
+      RecallUserReference: {
+        additionalProperties: false,
+        properties: {
+          displayName: {
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+        },
+        required: ["displayName", "id"],
+        type: "object",
+      },
+      RecallSummary: {
+        additionalProperties: false,
+        properties: {
+          announcedAt: {
+            format: "date-time",
+            type: "string",
+          },
+          batch: {
+            $ref: "#/components/schemas/RecallBatchReference",
+          },
+          completedAt: {
+            oneOf: [
+              {
+                format: "date-time",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          reason: {
+            type: "string",
+          },
+          reference: {
+            type: "string",
+          },
+          status: {
+            enum: RECALL_STATUSES,
+            type: "string",
+          },
+        },
+        required: ["announcedAt", "batch", "completedAt", "id", "reason", "reference", "status"],
+        type: "object",
+      },
+      RecallDetail: {
+        allOf: [
+          {
+            $ref: "#/components/schemas/RecallSummary",
+          },
+          {
+            additionalProperties: false,
+            properties: {
+              createdBy: {
+                $ref: "#/components/schemas/RecallUserReference",
+              },
+              custodyEventCount: {
+                minimum: 0,
+                type: "integer",
+              },
+              productCount: {
+                minimum: 0,
+                type: "integer",
+              },
+            },
+            required: ["createdBy", "custodyEventCount", "productCount"],
+            type: "object",
+          },
+        ],
+      },
+      RecallsEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              pagination: {
+                $ref: "#/components/schemas/PaginationMetadata",
+              },
+              recalls: {
+                items: {
+                  $ref: "#/components/schemas/RecallSummary",
+                },
+                type: "array",
+              },
+            },
+            required: ["pagination", "recalls"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      RecallEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              recall: {
+                $ref: "#/components/schemas/RecallDetail",
+              },
+            },
+            required: ["recall"],
             type: "object",
           },
         },

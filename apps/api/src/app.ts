@@ -10,6 +10,7 @@ import { authRouter } from "./routes/auth.routes.js";
 import { batchRouter } from "./routes/batch.routes.js";
 import { docsRouter } from "./routes/docs.routes.js";
 import { productRouter } from "./routes/product.routes.js";
+import { recallRouter } from "./routes/recall.routes.js";
 import { locationRouter } from "./routes/location.routes.js";
 import { systemRouter } from "./routes/system.routes.js";
 import { userRouter } from "./routes/user.routes.js";
@@ -30,6 +31,7 @@ export function createApp() {
   app.use(alertRouter);
   app.use(batchRouter);
   app.use(productRouter);
+  app.use(recallRouter);
   app.use(locationRouter);
   app.use(userRouter);
   app.use(verificationRouter);

@@ -7,6 +7,7 @@ export const PERMISSIONS = {
   batchesRead: "batches:read",
   productsRead: "products:read",
   productEventsWrite: "product-events:write",
+  recallsRead: "recalls:read",
   locationsRead: "locations:read",
   usersRead: "users:read",
 } as const;
@@ -19,6 +20,7 @@ export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly Permission[]>>
     PERMISSIONS.batchesRead,
     PERMISSIONS.productsRead,
     PERMISSIONS.productEventsWrite,
+    PERMISSIONS.recallsRead,
     PERMISSIONS.locationsRead,
     PERMISSIONS.usersRead,
   ],
@@ -27,12 +29,14 @@ export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly Permission[]>>
     PERMISSIONS.batchesRead,
     PERMISSIONS.productsRead,
     PERMISSIONS.productEventsWrite,
+    PERMISSIONS.recallsRead,
     PERMISSIONS.locationsRead,
   ],
   INSPECTOR: [
     PERMISSIONS.alertsRead,
     PERMISSIONS.batchesRead,
     PERMISSIONS.productsRead,
+    PERMISSIONS.recallsRead,
     PERMISSIONS.locationsRead,
   ],
 };

@@ -12,6 +12,7 @@ export const API_PATHS = {
   alerts: `${API_PREFIX}/alerts`,
   batches: `${API_PREFIX}/batches`,
   products: `${API_PREFIX}/products`,
+  recalls: `${API_PREFIX}/recalls`,
   locations: `${API_PREFIX}/locations`,
   auth: {
     login: `${API_PREFIX}/auth/login`,
