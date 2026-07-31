@@ -142,13 +142,11 @@ export function useSession(): SessionContextValue {
 
 export function AccessDenied() {
   return (
-    <main className="site-main" id="main-content">
-      <section className="surface welcome" aria-labelledby="access-denied-title">
-        <p className="eyebrow">Access denied</p>
-        <h1 id="access-denied-title">Permission required</h1>
-        <p>Your account cannot open this page.</p>
-      </section>
-    </main>
+    <section className="surface empty-state" aria-labelledby="access-denied-title">
+      <p className="eyebrow">Access denied</p>
+      <h1 id="access-denied-title">Permission required</h1>
+      <p>Your account cannot open this page.</p>
+    </section>
   );
 }
 
