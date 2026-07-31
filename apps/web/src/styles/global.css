@@ -647,6 +647,20 @@ button:disabled {
   min-height: 2.6rem;
 }
 
+.list-controls-many,
+.recall-controls {
+  grid-template-columns: minmax(12rem, 1fr) repeat(3, minmax(8.5rem, 0.45fr));
+}
+
+.list-controls-many .control-actions,
+.recall-controls .control-actions {
+  grid-column: 1 / -1;
+}
+
+.controls-error {
+  grid-column: 1 / -1;
+}
+
 .control-actions {
   display: flex;
   gap: 0.5rem;
@@ -854,6 +868,66 @@ button:disabled {
   padding: 0.65rem;
 }
 
+.badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.4rem;
+}
+
+.detail-summary {
+  max-width: 64rem;
+  margin: 1rem 0 0;
+  color: var(--graphite-700);
+  font-size: 0.9rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.related-list {
+  margin: 0;
+  padding: 0.5rem 0 0;
+  list-style: none;
+}
+
+.related-list li {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--grey-200);
+  padding: 0.65rem 0;
+  font-size: 0.8rem;
+}
+
+.related-list li > span:first-child {
+  color: var(--graphite-500);
+  font-size: 0.68rem;
+  font-weight: 720;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.json-block {
+  max-height: 30rem;
+  overflow: auto;
+  margin: 0.8rem 0 0;
+  border: 1px solid var(--grey-200);
+  border-radius: 0.3rem;
+  background: #fafafa;
+  padding: 0.75rem;
+  color: var(--graphite-700);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -993,6 +1067,17 @@ button:disabled {
     align-items: stretch;
   }
 
+  .list-controls-many,
+  .recall-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .list-controls-many .control-actions,
+  .recall-controls .control-actions,
+  .controls-error {
+    grid-column: auto;
+  }
+
   .control-actions {
     flex-wrap: wrap;
   }
@@ -1075,6 +1160,10 @@ button:disabled {
 
   .event-meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .skip-link {

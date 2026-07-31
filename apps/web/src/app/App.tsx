@@ -8,6 +8,8 @@ import { AuthGuard } from "../auth/SessionProvider.js";
 import { DashboardPage } from "../features/dashboard/DashboardPage.js";
 import { BatchDetailPage, BatchListPage } from "../features/batches/BatchPages.js";
 import { ProductDetailPage, ProductListPage } from "../features/products/ProductPages.js";
+import { AlertDetailPage, AlertListPage } from "../features/alerts/AlertPages.js";
+import { RecallDetailPage, RecallListPage } from "../features/recalls/RecallPages.js";
 
 function PendingPage({ description, title }: { description: string; title: string }) {
   return (
@@ -42,24 +44,10 @@ export function App() {
         <Route path="products/:productId" element={<ProductDetailPage />} />
         <Route path="batches" element={<BatchListPage />} />
         <Route path="batches/:batchId" element={<BatchDetailPage />} />
-        <Route
-          path="alerts/*"
-          element={
-            <PendingPage
-              description="Investigate rule-based anomalies and document review decisions."
-              title="Alerts"
-            />
-          }
-        />
-        <Route
-          path="recalls/*"
-          element={
-            <PendingPage
-              description="Track affected batches and recall progress."
-              title="Recalls"
-            />
-          }
-        />
+        <Route path="alerts" element={<AlertListPage />} />
+        <Route path="alerts/:alertId" element={<AlertDetailPage />} />
+        <Route path="recalls" element={<RecallListPage />} />
+        <Route path="recalls/:recallId" element={<RecallDetailPage />} />
         <Route
           path="locations"
           element={
