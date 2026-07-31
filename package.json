@@ -19,6 +19,7 @@
     "format:check": "prettier --check .",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "npm run test:e2e --workspace @verilot/web",
+    "test:live": "npm run test:live --workspace @verilot/web",
     "test:integration": "npm run test:integration --workspace @verilot/api",
     "test:unit": "npm run test:unit --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"

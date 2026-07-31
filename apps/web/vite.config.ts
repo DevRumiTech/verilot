@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: "jsdom",
-      exclude: [...configDefaults.exclude, "tests/e2e/**"],
+      exclude: [...configDefaults.exclude, "tests/e2e/**", "tests/live/**"],
       globals: true,
       setupFiles: ["./src/test/setup.ts"],
     },
