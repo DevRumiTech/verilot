@@ -1,9 +1,12 @@
 import {
   API_PATHS,
   PRODUCT_STATUSES,
+  type ProductDetail,
   type ProductDetailResponse,
+  type ProductEventMutationResponse,
   type ProductsResponse,
 } from "@verilot/contracts";
+import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { DetailList } from "../../components/DetailList.js";
@@ -12,6 +15,7 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/ResourceS
 import { readableLabel, StatusBadge } from "../../components/StatusBadge.js";
 import { formatDateTime } from "../../lib/formatters.js";
 import { useApiResource } from "../../lib/use-api-resource.js";
+import { ProductEventWorkflow } from "./ProductEventWorkflow.js";
 
 export function ProductListPage() {
   const [parameters] = useSearchParams();
@@ -89,9 +93,13 @@ export function ProductListPage() {
   );
 }
 
-function ProductDetailContent({ response }: { response: ProductDetailResponse }) {
-  const product = response.product;
-
+function ProductDetailContent({
+  onEventComplete,
+  product,
+}: {
+  onEventComplete(response: ProductEventMutationResponse, message: string): void;
+  product: ProductDetail;
+}) {
   return (
     <>
       <section className="surface detail-card" aria-labelledby="product-overview-title">
@@ -124,6 +132,8 @@ function ProductDetailContent({ response }: { response: ProductDetailResponse })
           ]}
         />
       </section>
+
+      <ProductEventWorkflow onComplete={onEventComplete} product={product} />
 
       <section className="surface panel detail-section" aria-labelledby="custody-history-title">
         <div className="panel-heading">
@@ -188,6 +198,38 @@ function ProductDetailContent({ response }: { response: ProductDetailResponse })
 export function ProductDetailPage() {
   const { productId = "" } = useParams();
   const resource = useApiResource<ProductDetailResponse>(`${API_PATHS.products}/${productId}`);
+  const [updatedProduct, setUpdatedProduct] = useState<ProductDetail | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUpdatedProduct(null);
+    setSuccessMessage(null);
+  }, [productId]);
+
+  function eventCompleted(response: ProductEventMutationResponse, message: string): void {
+    if (resource.status !== "success") {
+      return;
+    }
+
+    setUpdatedProduct((current) => {
+      const product = current ?? resource.data.product;
+      const hasEvent = product.custodyEvents.some((event) => event.id === response.event.id);
+      const custodyEvents = hasEvent
+        ? product.custodyEvents
+        : [...product.custodyEvents, response.event].sort((left, right) => {
+            const eventOrder = left.eventAt.localeCompare(right.eventAt);
+            return eventOrder === 0 ? left.recordedAt.localeCompare(right.recordedAt) : eventOrder;
+          });
+
+      return {
+        ...product,
+        custodyEvents,
+        eventCount: hasEvent ? product.eventCount : product.eventCount + 1,
+        status: response.productStatus,
+      };
+    });
+    setSuccessMessage(message);
+  }
 
   return (
     <section className="page" aria-labelledby="page-title">
@@ -204,7 +246,17 @@ export function ProductDetailPage() {
       {resource.status === "error" ? (
         <ErrorState error={resource.error} retry={resource.retry} />
       ) : null}
-      {resource.status === "success" ? <ProductDetailContent response={resource.data} /> : null}
+      {successMessage === null ? null : (
+        <p className="notice success-notice" role="status">
+          {successMessage}
+        </p>
+      )}
+      {resource.status === "success" ? (
+        <ProductDetailContent
+          onEventComplete={eventCompleted}
+          product={updatedProduct ?? resource.data.product}
+        />
+      ) : null}
     </section>
   );
 }

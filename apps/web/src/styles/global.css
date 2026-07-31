@@ -962,6 +962,15 @@ button:disabled {
   font-size: 0.85rem;
 }
 
+.dialog-description {
+  padding-top: 1rem;
+}
+
+.identifier-value {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
 .timeline {
   margin: 0;
   padding: 0.5rem 0 0;

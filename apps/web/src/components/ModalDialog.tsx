@@ -22,15 +22,18 @@ function keyboardTargets(container: HTMLElement): HTMLElement[] {
 
 export function ModalDialog({
   children,
+  description,
   onClose,
   title,
 }: {
   children: ReactNode;
+  description?: string;
   onClose(): void;
   title: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const titleId = `dialog-${title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`;
+  const descriptionId = `${titleId}-description`;
 
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -72,6 +75,7 @@ export function ModalDialog({
   return (
     <div className="dialog-backdrop">
       <div
+        aria-describedby={description === undefined ? undefined : descriptionId}
         aria-labelledby={titleId}
         aria-modal="true"
         className="surface dialog-panel"
@@ -90,6 +94,11 @@ export function ModalDialog({
             Close
           </button>
         </div>
+        {description === undefined ? null : (
+          <p className="dialog-copy dialog-description" id={descriptionId}>
+            {description}
+          </p>
+        )}
         {children}
       </div>
     </div>
