@@ -288,6 +288,29 @@ describe("partner product verification", () => {
     });
   });
 
+  it("keeps repeated request IDs from breaking verification responses", async () => {
+    const requestId = `${TEST_REQUEST_PREFIX}repeated_id`;
+
+    await withApiKey(PARTNER_API_KEY, "VL-2026-000042", requestId).expect(200);
+    await withApiKey(PARTNER_API_KEY, "VL-2026-000042", requestId).expect(200);
+
+    const [partnerRequestCount, verificationAttemptCount] = await Promise.all([
+      prisma.partnerApiRequest.count({
+        where: {
+          requestId,
+        },
+      }),
+      prisma.verificationAttempt.count({
+        where: {
+          requestId,
+        },
+      }),
+    ]);
+
+    expect(partnerRequestCount).toBe(1);
+    expect(verificationAttemptCount).toBe(2);
+  });
+
   it("records unknown products in both verification and partner histories", async () => {
     const requestId = `${TEST_REQUEST_PREFIX}unknown_product`;
     const response = remember(

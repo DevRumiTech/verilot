@@ -108,8 +108,10 @@ beforeAll(async () => {
         afterData: {
           cookieValue: "session-cookie-value",
           nested: {
+            Authorization: "Bearer plain-test-value",
             authorizationToken: "token-value",
             okay: null,
+            sessionIdentifier: "session-id-value",
             userAgentHash: "user-agent-hash-value",
           },
         },
@@ -122,6 +124,7 @@ beforeAll(async () => {
           ],
           nested: {
             api_key: "api-key-value",
+            credentials: "credential-value",
             safe: "visible-value",
           },
         },
@@ -253,8 +256,10 @@ describe("audit record APIs", () => {
       afterData: {
         cookieValue: "[REDACTED]",
         nested: {
+          Authorization: "[REDACTED]",
           authorizationToken: "[REDACTED]",
           okay: null,
+          sessionIdentifier: "[REDACTED]",
           userAgentHash: "[REDACTED]",
         },
       },
@@ -267,6 +272,7 @@ describe("audit record APIs", () => {
         ],
         nested: {
           api_key: "[REDACTED]",
+          credentials: "[REDACTED]",
           safe: "visible-value",
         },
       },

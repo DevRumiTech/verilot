@@ -382,6 +382,19 @@ describe("alert workflow mutations", () => {
       },
       replayed: false,
     });
+
+    await expect(
+      prisma.auditRecord.findFirst({
+        where: {
+          action: "alert.resolved",
+          entityId: inspectorAlertId,
+          requestId: "req_alert_resolve",
+        },
+      }),
+    ).resolves.toMatchObject({
+      actorId: inspectorId,
+      entityType: "Alert",
+    });
   });
 
   it("dismisses a supported open workflow state", async () => {

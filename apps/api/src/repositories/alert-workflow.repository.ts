@@ -103,7 +103,7 @@ function readUserReference(value: unknown):
     return null;
   }
 
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  if (typeof value !== "object" || Array.isArray(value)) {
     return undefined;
   }
 
@@ -290,9 +290,16 @@ export const alertWorkflowRepository: AlertWorkflowRepository = {
         });
         const alert = toWorkflowState(updated);
 
+        const auditAction =
+          input.action === "assign"
+            ? "alert.assigned"
+            : input.action === "resolve"
+              ? "alert.resolved"
+              : "alert.dismissed";
+
         await transaction.auditRecord.create({
           data: {
-            action: `alert.${input.action}ed`,
+            action: auditAction,
             actorEmail: input.actorEmail,
             actorId: input.actorId,
             actorRole: input.actorRole,

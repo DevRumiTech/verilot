@@ -178,24 +178,37 @@ function toJsonValue(value: Readonly<Record<string, JsonPrimitive>>): Prisma.Inp
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
+async function acquireLock(
+  transaction: Prisma.TransactionClient,
+  organizationId: string,
+  lockKey: string,
+): Promise<void> {
+  await transaction.$queryRaw<
+    Array<{
+      lockResult: string | null;
+    }>
+  >(
+    Prisma.sql`
+      SELECT pg_advisory_xact_lock(
+        hashtext(${organizationId}),
+        hashtext(${lockKey})
+      )::text AS "lockResult"
+    `,
+  );
+}
+
 export const custodyEventRepository: CustodyEventRepository = {
   async create(input) {
     return prisma.$transaction(
       async (transaction) => {
         const scope = `custody-event:${input.productId}`;
 
-        await transaction.$queryRaw<
-          Array<{
-            lockResult: string | null;
-          }>
-        >(
-          Prisma.sql`
-            SELECT pg_advisory_xact_lock(
-              hashtext(${input.organizationId}),
-              hashtext(${input.idempotencyKey})
-            )::text AS "lockResult"
-          `,
+        await acquireLock(
+          transaction,
+          input.organizationId,
+          `idempotency:${scope}:${input.idempotencyKey}`,
         );
+        await acquireLock(transaction, input.organizationId, input.productId);
 
         const stored = await transaction.idempotencyRecord.findUnique({
           where: {

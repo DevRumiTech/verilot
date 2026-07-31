@@ -14,6 +14,8 @@ interface SignedInSession {
 }
 
 let auditRecordId = "";
+let concurrentEmail = "";
+let concurrentProductId = "";
 let createdEventId = "";
 let foreignLocationId = "";
 let locationId = "";
@@ -52,19 +54,30 @@ async function signIn(email: string, password: string): Promise<SignedInSession>
 }
 
 beforeAll(async () => {
-  const product = await prisma.product.findUniqueOrThrow({
-    select: {
-      batch: {
-        select: {
-          manufacturerOrganizationId: true,
+  const [product, operator] = await Promise.all([
+    prisma.product.findUniqueOrThrow({
+      select: {
+        batch: {
+          select: {
+            manufacturerOrganizationId: true,
+          },
         },
+        id: true,
       },
-      id: true,
-    },
-    where: {
-      serialNumber: "VL-2026-000060",
-    },
-  });
+      where: {
+        serialNumber: "VL-2026-000060",
+      },
+    }),
+    prisma.user.findUniqueOrThrow({
+      select: {
+        id: true,
+        passwordHash: true,
+      },
+      where: {
+        email: "operator@verilot.local",
+      },
+    }),
+  ]);
 
   const foreignOrganization = await prisma.organization.findFirstOrThrow({
     select: {
@@ -78,6 +91,11 @@ beforeAll(async () => {
   });
 
   const suffix = randomUUID().slice(0, 8);
+  const concurrentBatchId = randomUUID();
+  const concurrentOrganizationId = randomUUID();
+  const concurrentUserId = randomUUID();
+  concurrentProductId = randomUUID();
+  concurrentEmail = `event-operator-${suffix}@verilot.local`;
 
   const [location, foreignLocation] = await prisma.$transaction([
     prisma.location.create({
@@ -117,6 +135,52 @@ beforeAll(async () => {
   productId = product.id;
   locationId = location.id;
   foreignLocationId = foreignLocation.id;
+
+  await prisma.organization.create({
+    data: {
+      id: concurrentOrganizationId,
+      name: `Custody Concurrency ${suffix}`,
+      slug: `custody-concurrency-${suffix}`,
+      type: "MANUFACTURER",
+      users: {
+        create: {
+          displayName: "Custody Concurrency Operator",
+          email: concurrentEmail,
+          id: concurrentUserId,
+          passwordHash: operator.passwordHash,
+          role: "OPERATOR",
+          status: "ACTIVE",
+        },
+      },
+    },
+  });
+
+  await prisma.batch.create({
+    data: {
+      activatedAt: new Date(),
+      code: `EVENT-CONCURRENT-${suffix}`,
+      createdById: concurrentUserId,
+      id: concurrentBatchId,
+      lotNumber: `EVENT-CONCURRENT-LOT-${suffix}`,
+      manufacturedAt: new Date("2026-07-01T00:00:00.000Z"),
+      manufacturerOrganizationId: concurrentOrganizationId,
+      productName: "Concurrent custody event fixture",
+      products: {
+        create: {
+          activatedAt: new Date(),
+          id: concurrentProductId,
+          qrPayload: `https://verilot.local/test/${concurrentProductId}`,
+          serialNumber: `EVENT-CONCURRENT-${suffix}`,
+          status: "VERIFIED",
+        },
+      },
+      serialEnd: 1,
+      serialPrefix: `EVENT-${suffix}-`,
+      serialStart: 1,
+      sku: `EVENT-CONCURRENT-SKU-${suffix}`,
+      status: "ACTIVE",
+    },
+  });
 });
 
 afterAll(async () => {
@@ -303,6 +367,74 @@ describe("product custody-event writes", () => {
     expect(response.body.error).toMatchObject({
       code: "LOCATION_NOT_FOUND",
     });
+  });
+
+  it("serializes different status writes for the same product", async () => {
+    const session = await signIn(concurrentEmail, "VeriLotOperator2026!");
+    const eventAt = new Date().toISOString();
+    const recalledKey = `concurrent-recalled-${randomUUID()}`;
+    const blockedKey = `concurrent-blocked-${randomUUID()}`;
+
+    const [recalled, blocked] = await Promise.all([
+      request(app)
+        .post(`${API_PATHS.products}/${concurrentProductId}/events`)
+        .set("Cookie", session.cookie)
+        .set(CSRF_HEADER_NAME, session.csrfToken)
+        .set("Origin", env.APP_ORIGIN)
+        .send({
+          eventAt,
+          idempotencyKey: recalledKey,
+          notes: "Concurrent recall transition.",
+          type: "RECALLED",
+        }),
+      request(app)
+        .post(`${API_PATHS.products}/${concurrentProductId}/events`)
+        .set("Cookie", session.cookie)
+        .set(CSRF_HEADER_NAME, session.csrfToken)
+        .set("Origin", env.APP_ORIGIN)
+        .send({
+          eventAt,
+          idempotencyKey: blockedKey,
+          notes: "Concurrent block transition.",
+          type: "BLOCKED",
+        }),
+    ]);
+
+    expect(recalled.status).toBe(201);
+    expect([201, 409]).toContain(blocked.status);
+
+    const [product, eventCount, auditCount] = await Promise.all([
+      prisma.product.findUniqueOrThrow({
+        select: {
+          status: true,
+        },
+        where: {
+          id: concurrentProductId,
+        },
+      }),
+      prisma.custodyEvent.count({
+        where: {
+          idempotencyKey: {
+            in: [recalledKey, blockedKey],
+          },
+          productId: concurrentProductId,
+        },
+      }),
+      prisma.auditRecord.count({
+        where: {
+          action: "product.custody_event.created",
+          entityId: {
+            in: [recalled.body.data.event.id, blocked.body.data?.event?.id].filter(
+              (id): id is string => typeof id === "string",
+            ),
+          },
+        },
+      }),
+    ]);
+
+    expect(product.status).toBe("RECALLED");
+    expect(eventCount).toBe(blocked.status === 201 ? 2 : 1);
+    expect(auditCount).toBe(eventCount);
   });
 
   it("preserves custody events and audit records", async () => {

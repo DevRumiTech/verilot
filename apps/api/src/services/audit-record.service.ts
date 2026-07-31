@@ -16,9 +16,12 @@ import {
 } from "../repositories/audit-record.repository.js";
 
 const SENSITIVE_KEY_PARTS = [
+  "authorization",
+  "credential",
   "password",
   "token",
   "secret",
+  "session",
   "cookie",
   "csrf",
   "apikey",

@@ -18,15 +18,18 @@ export interface PartnerRequestRepository {
 
 export const partnerRequestRepository: PartnerRequestRepository = {
   async record(input) {
-    await prisma.partnerApiRequest.create({
-      data: {
-        apiClientId: input.apiClientId,
-        httpStatus: input.httpStatus,
-        outcome: input.outcome,
-        requestBody: input.requestBody,
-        requestId: input.requestId,
-        responseBody: input.responseBody,
-      },
+    await prisma.partnerApiRequest.createMany({
+      data: [
+        {
+          apiClientId: input.apiClientId,
+          httpStatus: input.httpStatus,
+          outcome: input.outcome,
+          requestBody: input.requestBody,
+          requestId: input.requestId,
+          responseBody: input.responseBody,
+        },
+      ],
+      skipDuplicates: true,
     });
   },
 };
