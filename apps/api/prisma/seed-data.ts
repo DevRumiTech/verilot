@@ -23,6 +23,7 @@ const ADMINISTRATOR_ID = seedUuid(2, 1);
 const OPERATOR_ID = seedUuid(2, 2);
 const INSPECTOR_ID = seedUuid(2, 3);
 const PARTNER_OPERATOR_ID = seedUuid(2, 4);
+const DEMO_ID = seedUuid(2, 5);
 
 const SEEDED_AT = new Date("2026-01-05T08:00:00.000Z");
 const ACTIVATED_AT = new Date("2026-01-20T09:00:00.000Z");
@@ -33,6 +34,7 @@ export const STABLE_SERIAL_NUMBER = "VL-2026-000042";
 export interface SeedCredentials {
   readonly administratorPasswordHash: string;
   readonly apiKeyHash: string;
+  readonly demoPasswordHash: string;
   readonly inspectorPasswordHash: string;
   readonly operatorPasswordHash: string;
 }
@@ -172,6 +174,17 @@ function buildUsers(credentials: SeedCredentials): Prisma.UserCreateManyInput[] 
       displayName: "Quality Inspector",
       passwordHash: credentials.inspectorPasswordHash,
       role: UserRole.INSPECTOR,
+      status: UserStatus.ACTIVE,
+      createdAt: SEEDED_AT,
+      updatedAt: SEEDED_AT,
+    },
+    {
+      id: DEMO_ID,
+      organizationId: MANUFACTURER_ORGANIZATION_ID,
+      email: "demo@verilot.local",
+      displayName: "Recruiter Demo",
+      passwordHash: credentials.demoPasswordHash,
+      role: UserRole.DEMO,
       status: UserStatus.ACTIVE,
       createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,

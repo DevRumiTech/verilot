@@ -20,6 +20,7 @@ enum UserRole {
   ADMINISTRATOR
   OPERATOR
   INSPECTOR
+  DEMO
 }
 
 enum UserStatus {

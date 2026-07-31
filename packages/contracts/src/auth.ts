@@ -1,4 +1,4 @@
-export const USER_ROLES = ["ADMINISTRATOR", "OPERATOR", "INSPECTOR"] as const;
+export const USER_ROLES = ["ADMINISTRATOR", "OPERATOR", "INSPECTOR", "DEMO"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 
@@ -46,6 +46,14 @@ export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly Permission[]>>
   ],
   INSPECTOR: [
     PERMISSIONS.alertsManage,
+    PERMISSIONS.alertsRead,
+    PERMISSIONS.batchesRead,
+    PERMISSIONS.dashboardRead,
+    PERMISSIONS.productsRead,
+    PERMISSIONS.recallsRead,
+    PERMISSIONS.locationsRead,
+  ],
+  DEMO: [
     PERMISSIONS.alertsRead,
     PERMISSIONS.batchesRead,
     PERMISSIONS.dashboardRead,

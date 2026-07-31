@@ -1,10 +1,11 @@
 import "dotenv/config";
 
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 import { hash } from "bcryptjs";
 
 import { prisma } from "../src/config/database.js";
+import { UserRole, UserStatus } from "../src/generated/prisma/enums.js";
 import {
   buildSeedData,
   PARTNER_API_KEY,
@@ -14,9 +15,44 @@ import {
 
 const SEED_PASSWORDS = {
   administrator: "VeriLotAdmin2026!",
+  demo: "VeriLotDemo2026!",
   inspector: "VeriLotInspector2026!",
   operator: "VeriLotOperator2026!",
 } as const;
+
+type SeedProfile = "local" | "public-demo";
+
+function readSeedProfile(): SeedProfile {
+  const profile = process.env.SEED_PROFILE ?? "local";
+
+  if (profile !== "local" && profile !== "public-demo") {
+    throw new Error('SEED_PROFILE must be either "local" or "public-demo".');
+  }
+
+  if (process.env.NODE_ENV === "production" && profile !== "public-demo") {
+    throw new Error('Production seeding requires SEED_PROFILE="public-demo".');
+  }
+
+  return profile;
+}
+
+function readDemoPassword(profile: SeedProfile): string {
+  if (profile === "local") {
+    return SEED_PASSWORDS.demo;
+  }
+
+  const password = process.env.DEMO_PASSWORD;
+
+  if (password === undefined || password.length < 12) {
+    throw new Error("Public demo seeding requires DEMO_PASSWORD with at least 12 characters.");
+  }
+
+  return password;
+}
+
+function createPrivateSeedSecret(): string {
+  return randomBytes(32).toString("base64url");
+}
 
 interface SeedCounts {
   readonly alerts: number;
@@ -31,19 +67,34 @@ interface SeedCounts {
   readonly users: number;
 }
 
-async function buildCredentials(): Promise<SeedCredentials> {
-  const [administratorPasswordHash, operatorPasswordHash, inspectorPasswordHash] =
-    await Promise.all([
-      hash(SEED_PASSWORDS.administrator, 12),
-      hash(SEED_PASSWORDS.operator, 12),
-      hash(SEED_PASSWORDS.inspector, 12),
-    ]);
+async function buildCredentials(profile: SeedProfile): Promise<SeedCredentials> {
+  const publicDemo = profile === "public-demo";
+  const administratorPassword = publicDemo
+    ? createPrivateSeedSecret()
+    : SEED_PASSWORDS.administrator;
+  const operatorPassword = publicDemo ? createPrivateSeedSecret() : SEED_PASSWORDS.operator;
+  const inspectorPassword = publicDemo ? createPrivateSeedSecret() : SEED_PASSWORDS.inspector;
+  const demoPassword = readDemoPassword(profile);
+  const apiKey = publicDemo ? createPrivateSeedSecret() : PARTNER_API_KEY;
+
+  const [
+    administratorPasswordHash,
+    operatorPasswordHash,
+    inspectorPasswordHash,
+    demoPasswordHash,
+  ] = await Promise.all([
+    hash(administratorPassword, 12),
+    hash(operatorPassword, 12),
+    hash(inspectorPassword, 12),
+    hash(demoPassword, 12),
+  ]);
 
   return {
     administratorPasswordHash,
     operatorPasswordHash,
     inspectorPasswordHash,
-    apiKeyHash: createHash("sha256").update(PARTNER_API_KEY).digest("hex"),
+    demoPasswordHash,
+    apiKeyHash: createHash("sha256").update(apiKey).digest("hex"),
   };
 }
 
@@ -97,7 +148,7 @@ function assertMinimumCounts(counts: SeedCounts): void {
     organizations: 4,
     products: 160,
     recalls: 2,
-    users: 3,
+    users: 5,
   } satisfies SeedCounts;
 
   for (const key of Object.keys(requirements) as (keyof SeedCounts)[]) {
@@ -109,20 +160,27 @@ function assertMinimumCounts(counts: SeedCounts): void {
   }
 }
 
-async function seedDatabase(): Promise<void> {
+async function seedDatabase(profile: SeedProfile): Promise<void> {
   const stableProduct = await prisma.product.findUnique({
     select: { id: true },
     where: { serialNumber: STABLE_SERIAL_NUMBER },
   });
 
   if (!stableProduct) {
-    const credentials = await buildCredentials();
+    const credentials = await buildCredentials(profile);
     const data = buildSeedData(credentials);
+    const users =
+      profile === "public-demo"
+        ? data.users.map((user) => ({
+            ...user,
+            status: user.role === UserRole.DEMO ? UserStatus.ACTIVE : UserStatus.SUSPENDED,
+          }))
+        : data.users;
 
     await prisma.$transaction(
       async (transaction) => {
         await transaction.organization.createMany({ data: data.organizations });
-        await transaction.user.createMany({ data: data.users });
+        await transaction.user.createMany({ data: users });
         await transaction.location.createMany({ data: data.locations });
         await transaction.batch.createMany({ data: data.batches });
         await transaction.product.createMany({ data: data.products });
@@ -164,16 +222,19 @@ async function seedDatabase(): Promise<void> {
   console.info(
     JSON.stringify({
       event: "seed.complete",
+      profile,
       counts,
       stableProduct: stableProductStatus,
     }),
   );
 }
 
+const seedProfile = readSeedProfile();
+
 await prisma.$connect();
 
 try {
-  await seedDatabase();
+  await seedDatabase(seedProfile);
 } finally {
   await prisma.$disconnect();
 }

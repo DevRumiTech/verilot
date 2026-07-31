@@ -9,6 +9,7 @@ import {
 const credentials: SeedCredentials = {
   administratorPasswordHash: "a".repeat(60),
   apiKeyHash: "d".repeat(64),
+  demoPasswordHash: "r".repeat(60),
   inspectorPasswordHash: "i".repeat(60),
   operatorPasswordHash: "o".repeat(60),
 };
@@ -18,7 +19,7 @@ describe("buildSeedData", () => {
     const data = buildSeedData(credentials);
 
     expect(data.organizations).toHaveLength(4);
-    expect(data.users).toHaveLength(4);
+    expect(data.users).toHaveLength(5);
     expect(data.locations).toHaveLength(8);
     expect(data.batches).toHaveLength(8);
     expect(data.products).toHaveLength(160);

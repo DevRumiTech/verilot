@@ -1999,7 +1999,7 @@ export const openApiDocument = {
             $ref: "#/components/schemas/OrganizationSummary",
           },
           role: {
-            enum: ["ADMINISTRATOR", "OPERATOR", "INSPECTOR"],
+            enum: ["ADMINISTRATOR", "OPERATOR", "INSPECTOR", "DEMO"],
             type: "string",
           },
         },
@@ -2494,7 +2494,7 @@ export const openApiDocument = {
           actorRole: {
             oneOf: [
               {
-                enum: ["ADMINISTRATOR", "OPERATOR", "INSPECTOR"],
+                enum: ["ADMINISTRATOR", "OPERATOR", "INSPECTOR", "DEMO"],
                 type: "string",
               },
               {
@@ -3570,7 +3570,7 @@ export const openApiDocument = {
             $ref: "#/components/schemas/OrganizationSummary",
           },
           role: {
-            enum: ["ADMINISTRATOR", "OPERATOR", "INSPECTOR"],
+            enum: ["ADMINISTRATOR", "OPERATOR", "INSPECTOR", "DEMO"],
             type: "string",
           },
           status: {

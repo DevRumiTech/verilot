@@ -41,6 +41,7 @@ const createBody = {
 let administratorSession: SignedInSession;
 let concurrentBatchId = "";
 let createdBatchId = "";
+let demoSession: SignedInSession;
 let foreignBatchId = "";
 let inspectorSession: SignedInSession;
 let operatorId = "";
@@ -131,11 +132,13 @@ beforeAll(async () => {
     },
   });
 
-  [administratorSession, operatorSession, inspectorSession] = await Promise.all([
-    signIn("admin@verilot.local", "VeriLotAdmin2026!"),
-    signIn("operator@verilot.local", "VeriLotOperator2026!"),
-    signIn("inspector@verilot.local", "VeriLotInspector2026!"),
-  ]);
+  [administratorSession, operatorSession, inspectorSession, demoSession] =
+    await Promise.all([
+      signIn("admin@verilot.local", "VeriLotAdmin2026!"),
+      signIn("operator@verilot.local", "VeriLotOperator2026!"),
+      signIn("inspector@verilot.local", "VeriLotInspector2026!"),
+      signIn("demo@verilot.local", "VeriLotDemo2026!"),
+    ]);
 });
 
 afterAll(async () => {
@@ -194,6 +197,17 @@ describe("batch workflow mutations", () => {
       .send(securityBody)
       .expect(403);
     await postAs(inspectorSession, API_PATHS.batches).send(securityBody).expect(403);
+
+    await request(app)
+      .get(API_PATHS.batches)
+      .set("Cookie", demoSession.cookie)
+      .expect(200);
+
+    const demoWrite = await postAs(demoSession, API_PATHS.batches)
+      .send(securityBody)
+      .expect(403);
+
+    expect(demoWrite.body.error.code).toBe("INSUFFICIENT_PERMISSIONS");
   });
 
   it("validates dates, serial ranges, and generation bounds", async () => {

@@ -3,6 +3,7 @@ import type {
   JsonPrimitive,
   ProductStatus as ProductStatusValue,
   TransportMode,
+  UserRole,
 } from "@verilot/contracts";
 import { Prisma } from "../generated/prisma/client.js";
 import { ProductStatus } from "../generated/prisma/enums.js";
@@ -45,7 +46,7 @@ export type CustodyEventRecord = Prisma.CustodyEventGetPayload<{
 export interface CreateCustodyEventInput {
   actorEmail: string;
   actorId: string;
-  actorRole: "ADMINISTRATOR" | "INSPECTOR" | "OPERATOR";
+  actorRole: UserRole;
   correctedEventId?: string;
   eventAt: Date;
   idempotencyKey: string;

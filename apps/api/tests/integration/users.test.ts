@@ -112,10 +112,11 @@ describe("user authorization and organization boundaries", () => {
 
     const response = await request(app).get(API_PATHS.users).set("Cookie", cookie).expect(200);
 
-    expect(response.body.data.users).toHaveLength(3);
+    expect(response.body.data.users).toHaveLength(4);
     expect(response.body.data.users.map((user: { email: string }) => user.email)).toEqual([
       "admin@verilot.local",
       "inspector@verilot.local",
+      "demo@verilot.local",
       "operator@verilot.local",
     ]);
 
