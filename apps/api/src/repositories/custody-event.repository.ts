@@ -184,12 +184,16 @@ export const custodyEventRepository: CustodyEventRepository = {
       async (transaction) => {
         const scope = `custody-event:${input.productId}`;
 
-        await transaction.$executeRaw(
+        await transaction.$queryRaw<
+          Array<{
+            lockResult: string | null;
+          }>
+        >(
           Prisma.sql`
             SELECT pg_advisory_xact_lock(
               hashtext(${input.organizationId}),
               hashtext(${input.idempotencyKey})
-            )
+            )::text AS "lockResult"
           `,
         );
 

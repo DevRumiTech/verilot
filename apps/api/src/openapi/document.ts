@@ -77,6 +77,10 @@ export const openApiDocument = {
       name: "Products",
     },
     {
+      description: "Organization and global location records.",
+      name: "Locations",
+    },
+    {
       description: "Organization user records.",
       name: "Users",
     },
@@ -432,6 +436,169 @@ export const openApiDocument = {
           },
         ],
         summary: "Get organization product",
+        tags: ["Products"],
+      },
+    },
+    [API_PATHS.locations]: {
+      get: {
+        operationId: "listLocations",
+        parameters: [
+          {
+            in: "query",
+            name: "canton",
+            schema: {
+              maxLength: 2,
+              minLength: 2,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "search",
+            schema: {
+              maxLength: 100,
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/LocationsEnvelope",
+                },
+              },
+            },
+            description: "Locations returned.",
+          },
+          "400": errorResponse("Query values rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "List available locations",
+        tags: ["Locations"],
+      },
+    },
+    [`${API_PATHS.products}/{productId}/events`]: {
+      post: {
+        operationId: "createProductEvent",
+        parameters: [
+          {
+            in: "path",
+            name: "productId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                additionalProperties: false,
+                properties: {
+                  correctedEventId: {
+                    format: "uuid",
+                    type: "string",
+                  },
+                  eventAt: {
+                    format: "date-time",
+                    type: "string",
+                  },
+                  idempotencyKey: {
+                    maxLength: 120,
+                    minLength: 8,
+                    type: "string",
+                  },
+                  locationId: {
+                    format: "uuid",
+                    type: "string",
+                  },
+                  metadata: {
+                    additionalProperties: {
+                      type: ["boolean", "null", "number", "string"],
+                    },
+                    type: "object",
+                  },
+                  notes: {
+                    maxLength: 1000,
+                    type: "string",
+                  },
+                  shipmentReference: {
+                    maxLength: 100,
+                    type: "string",
+                  },
+                  transportMode: {
+                    enum: ["AIR", "HAND_CARRIED", "RAIL", "ROAD", "WATER", "UNKNOWN"],
+                    type: "string",
+                  },
+                  type: {
+                    enum: [
+                      "MANUFACTURED",
+                      "PACKED",
+                      "DISPATCHED",
+                      "RECEIVED",
+                      "INSPECTED",
+                      "SOLD",
+                      "RETURNED",
+                      "BLOCKED",
+                      "RELEASED",
+                      "RECALLED",
+                      "DESTROYED",
+                      "CORRECTION",
+                    ],
+                    type: "string",
+                  },
+                },
+                required: ["eventAt", "idempotencyKey", "type"],
+                type: "object",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ProductEventEnvelope",
+                },
+              },
+            },
+            description: "Earlier response returned.",
+          },
+          "201": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ProductEventEnvelope",
+                },
+              },
+            },
+            description: "Custody event recorded.",
+          },
+          "400": errorResponse("Event data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+          "404": errorResponse("Referenced record not found."),
+          "409": errorResponse("Event conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Record a product custody event",
         tags: ["Products"],
       },
     },
@@ -1007,7 +1174,7 @@ export const openApiDocument = {
           transportMode: {
             oneOf: [
               {
-                enum: ["AIR", "HAND_CARRIED", "RAIL", "ROAD", "SEA"],
+                enum: ["AIR", "HAND_CARRIED", "RAIL", "ROAD", "WATER", "UNKNOWN"],
                 type: "string",
               },
               {
@@ -1016,6 +1183,20 @@ export const openApiDocument = {
             ],
           },
           type: {
+            enum: [
+              "MANUFACTURED",
+              "PACKED",
+              "DISPATCHED",
+              "RECEIVED",
+              "INSPECTED",
+              "SOLD",
+              "RETURNED",
+              "BLOCKED",
+              "RELEASED",
+              "RECALLED",
+              "DESTROYED",
+              "CORRECTION",
+            ],
             type: "string",
           },
         },
@@ -1088,6 +1269,98 @@ export const openApiDocument = {
             },
             required: ["product"],
             type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      LocationSummary: {
+        additionalProperties: false,
+        properties: {
+          canton: {
+            type: "string",
+          },
+          code: {
+            type: "string",
+          },
+          countryCode: {
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          isGlobal: {
+            type: "boolean",
+          },
+          latitude: {
+            type: "number",
+          },
+          longitude: {
+            type: "number",
+          },
+          municipality: {
+            type: "string",
+          },
+          name: {
+            type: "string",
+          },
+        },
+        required: [
+          "canton",
+          "code",
+          "countryCode",
+          "id",
+          "isGlobal",
+          "latitude",
+          "longitude",
+          "municipality",
+          "name",
+        ],
+        type: "object",
+      },
+      LocationsEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              locations: {
+                items: {
+                  $ref: "#/components/schemas/LocationSummary",
+                },
+                type: "array",
+              },
+            },
+            required: ["locations"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      ProductEventMutation: {
+        additionalProperties: false,
+        properties: {
+          event: {
+            $ref: "#/components/schemas/ProductCustodyEvent",
+          },
+          productStatus: {
+            enum: ["PENDING", "VERIFIED", "WARNING", "BLOCKED", "RECALLED", "DESTROYED"],
+            type: "string",
+          },
+          replayed: {
+            type: "boolean",
+          },
+        },
+        required: ["event", "productStatus", "replayed"],
+        type: "object",
+      },
+      ProductEventEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            $ref: "#/components/schemas/ProductEventMutation",
           },
         },
         required: ["data"],

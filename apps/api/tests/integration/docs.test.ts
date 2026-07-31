@@ -26,6 +26,8 @@ describe("API documentation", () => {
         `${API_PATHS.batches}/{batchId}`,
         API_PATHS.products,
         `${API_PATHS.products}/{productId}`,
+        `${API_PATHS.products}/{productId}/events`,
+        API_PATHS.locations,
         API_PATHS.users,
         `${API_PATHS.verification}/{serialNumber}`,
       ]),

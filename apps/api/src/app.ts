@@ -9,6 +9,7 @@ import { authRouter } from "./routes/auth.routes.js";
 import { batchRouter } from "./routes/batch.routes.js";
 import { docsRouter } from "./routes/docs.routes.js";
 import { productRouter } from "./routes/product.routes.js";
+import { locationRouter } from "./routes/location.routes.js";
 import { systemRouter } from "./routes/system.routes.js";
 import { userRouter } from "./routes/user.routes.js";
 import { verificationRouter } from "./routes/verification.routes.js";
@@ -27,6 +28,7 @@ export function createApp() {
   app.use(authRouter);
   app.use(batchRouter);
   app.use(productRouter);
+  app.use(locationRouter);
   app.use(userRouter);
   app.use(verificationRouter);
 
