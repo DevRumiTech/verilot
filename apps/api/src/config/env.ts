@@ -18,6 +18,8 @@ const environmentSchema = z.object({
   PORT: z.coerce.number().int().positive().max(65_535).default(4_000),
   RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().positive().max(10_000).default(20),
   RATE_LIMIT_LOGIN_WINDOW_SECONDS: z.coerce.number().int().positive().max(86_400).default(900),
+  RATE_LIMIT_PARTNER_MAX: z.coerce.number().int().positive().max(100_000).default(120),
+  RATE_LIMIT_PARTNER_WINDOW_SECONDS: z.coerce.number().int().positive().max(86_400).default(60),
   RATE_LIMIT_VERIFICATION_MAX: z.coerce.number().int().positive().max(100_000).default(60),
   RATE_LIMIT_VERIFICATION_WINDOW_SECONDS: z.coerce
     .number()

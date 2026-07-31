@@ -13,6 +13,7 @@ import { docsRouter } from "./routes/docs.routes.js";
 import { productRouter } from "./routes/product.routes.js";
 import { recallRouter } from "./routes/recall.routes.js";
 import { locationRouter } from "./routes/location.routes.js";
+import { partnerRouter } from "./routes/partner.routes.js";
 import { systemRouter } from "./routes/system.routes.js";
 import { userRouter } from "./routes/user.routes.js";
 import { verificationRouter } from "./routes/verification.routes.js";
@@ -35,6 +36,7 @@ export function createApp() {
   app.use(productRouter);
   app.use(recallRouter);
   app.use(locationRouter);
+  app.use(partnerRouter);
   app.use(userRouter);
   app.use(verificationRouter);
 

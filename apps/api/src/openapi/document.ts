@@ -7,6 +7,8 @@ import {
   AUTH_COOKIE_NAME,
   CSRF_HEADER_NAME,
   MAX_BATCH_PRODUCT_COUNT,
+  PARTNER_API_KEY_HEADER_NAME,
+  PARTNER_API_PATHS,
   RECALL_STATUSES,
   SYSTEM_PATHS,
 } from "@verilot/contracts";
@@ -104,6 +106,10 @@ export const openApiDocument = {
     {
       description: "Public product verification.",
       name: "Verification",
+    },
+    {
+      description: "API-key authenticated partner verification.",
+      name: "Partner verification",
     },
   ],
   paths: {
@@ -1523,6 +1529,65 @@ export const openApiDocument = {
         },
         summary: "Verify a product",
         tags: ["Verification"],
+      },
+    },
+    [`${PARTNER_API_PATHS.verification}/{serialNumber}`]: {
+      get: {
+        description:
+          "Returns the same redacted verification contract as the public endpoint using partner API-key authentication and a persistent client-specific rate limit.",
+        operationId: "getPartnerVerification",
+        parameters: [
+          {
+            in: "path",
+            name: "serialNumber",
+            required: true,
+            schema: {
+              pattern: "^VL-\\d{4}-\\d{6}$",
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/PartnerVerificationEnvelope",
+                },
+              },
+            },
+            description: "Partner product verification returned.",
+            headers: rateLimitHeaders,
+          },
+          "400": {
+            ...errorResponse("Serial number rejected."),
+            headers: rateLimitHeaders,
+          },
+          "401": errorResponse("Partner API key missing or invalid."),
+          "404": {
+            ...errorResponse("Product not found."),
+            headers: rateLimitHeaders,
+          },
+          "429": {
+            ...errorResponse("Partner request limit reached."),
+            headers: {
+              ...rateLimitHeaders,
+              "Retry-After": {
+                description: "Seconds until the request can be retried.",
+                schema: {
+                  type: "integer",
+                },
+              },
+            },
+          },
+        },
+        security: [
+          {
+            partnerApiKey: [],
+          },
+        ],
+        summary: "Verify a product for a partner",
+        tags: ["Partner verification"],
       },
     },
   },
@@ -3364,6 +3429,16 @@ export const openApiDocument = {
         required: ["data"],
         type: "object",
       },
+      PartnerVerificationEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            $ref: "#/components/schemas/PublicVerification",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
     },
     securitySchemes: {
       csrfHeader: {
@@ -3376,6 +3451,12 @@ export const openApiDocument = {
         description: "HTTP-only browser session cookie.",
         in: "cookie",
         name: AUTH_COOKIE_NAME,
+        type: "apiKey",
+      },
+      partnerApiKey: {
+        description: "Partner API key. Raw keys are never persisted or logged.",
+        in: "header",
+        name: PARTNER_API_KEY_HEADER_NAME,
         type: "apiKey",
       },
     },

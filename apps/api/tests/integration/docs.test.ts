@@ -1,4 +1,4 @@
-import { API_PATHS, APPLICATION_NAME, SYSTEM_PATHS } from "@verilot/contracts";
+import { API_PATHS, APPLICATION_NAME, PARTNER_API_PATHS, SYSTEM_PATHS } from "@verilot/contracts";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
@@ -42,12 +42,14 @@ describe("API documentation", () => {
         API_PATHS.locations,
         API_PATHS.users,
         `${API_PATHS.verification}/{serialNumber}`,
+        `${PARTNER_API_PATHS.verification}/{serialNumber}`,
       ]),
     );
 
     expect(response.body.components.securitySchemes).toEqual(
       expect.objectContaining({
         csrfHeader: expect.any(Object),
+        partnerApiKey: expect.any(Object),
         sessionCookie: expect.any(Object),
       }),
     );
