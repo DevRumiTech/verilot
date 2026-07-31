@@ -1,4 +1,7 @@
 import {
+  ALERT_RULES,
+  ALERT_SEVERITIES,
+  ALERT_STATUSES,
   API_PATHS,
   APPLICATION_NAME,
   AUTH_COOKIE_NAME,
@@ -67,6 +70,10 @@ export const openApiDocument = {
     {
       description: "Browser session operations.",
       name: "Authentication",
+    },
+    {
+      description: "Organization alert records.",
+      name: "Alerts",
     },
     {
       description: "Organization batch records.",
@@ -223,6 +230,151 @@ export const openApiDocument = {
         ],
         summary: "Sign out",
         tags: ["Authentication"],
+      },
+    },
+    [API_PATHS.alerts]: {
+      get: {
+        operationId: "listAlerts",
+        parameters: [
+          {
+            in: "query",
+            name: "page",
+            schema: {
+              default: 1,
+              maximum: 10_000,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "pageSize",
+            schema: {
+              default: 20,
+              maximum: 100,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "status",
+            schema: {
+              enum: ALERT_STATUSES,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "severity",
+            schema: {
+              enum: ALERT_SEVERITIES,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "rule",
+            schema: {
+              enum: ALERT_RULES,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "productId",
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "batchId",
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "assignedToId",
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+          {
+            description: "Match title, summary, product serial, batch code, or lot number.",
+            in: "query",
+            name: "search",
+            schema: {
+              maxLength: 100,
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AlertsEnvelope",
+                },
+              },
+            },
+            description: "Organization alerts returned.",
+          },
+          "400": errorResponse("Query values rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "List organization alerts",
+        tags: ["Alerts"],
+      },
+    },
+    [`${API_PATHS.alerts}/{alertId}`]: {
+      get: {
+        operationId: "getAlert",
+        parameters: [
+          {
+            in: "path",
+            name: "alertId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AlertEnvelope",
+                },
+              },
+            },
+            description: "Organization alert returned.",
+          },
+          "400": errorResponse("Alert identifier rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+          "404": errorResponse("Alert not found."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "Get organization alert",
+        tags: ["Alerts"],
       },
     },
     [API_PATHS.batches]: {
@@ -829,6 +981,310 @@ export const openApiDocument = {
         properties: {
           data: {
             $ref: "#/components/schemas/AuthSession",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      AlertUserReference: {
+        additionalProperties: false,
+        properties: {
+          displayName: {
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+        },
+        required: ["displayName", "id"],
+        type: "object",
+      },
+      AlertProductReference: {
+        additionalProperties: false,
+        properties: {
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          serialNumber: {
+            type: "string",
+          },
+          status: {
+            enum: ["PENDING", "VERIFIED", "WARNING", "BLOCKED", "RECALLED", "DESTROYED"],
+            type: "string",
+          },
+        },
+        required: ["id", "serialNumber", "status"],
+        type: "object",
+      },
+      AlertBatchReference: {
+        additionalProperties: false,
+        properties: {
+          code: {
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          lotNumber: {
+            type: "string",
+          },
+          productName: {
+            type: "string",
+          },
+          sku: {
+            type: "string",
+          },
+        },
+        required: ["code", "id", "lotNumber", "productName", "sku"],
+        type: "object",
+      },
+      AlertCustodyEventReference: {
+        additionalProperties: false,
+        properties: {
+          eventAt: {
+            format: "date-time",
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          recordedAt: {
+            format: "date-time",
+            type: "string",
+          },
+          type: {
+            enum: [
+              "MANUFACTURED",
+              "PACKED",
+              "DISPATCHED",
+              "RECEIVED",
+              "INSPECTED",
+              "SOLD",
+              "RETURNED",
+              "BLOCKED",
+              "RELEASED",
+              "RECALLED",
+              "DESTROYED",
+              "CORRECTION",
+            ],
+            type: "string",
+          },
+        },
+        required: ["eventAt", "id", "recordedAt", "type"],
+        type: "object",
+      },
+      AlertVerificationAttemptReference: {
+        additionalProperties: false,
+        properties: {
+          attemptedAt: {
+            format: "date-time",
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          result: {
+            enum: ["VERIFIED", "WARNING", "BLOCKED", "RECALLED", "UNKNOWN"],
+            type: "string",
+          },
+          serialNumber: {
+            type: "string",
+          },
+        },
+        required: ["attemptedAt", "id", "result", "serialNumber"],
+        type: "object",
+      },
+      AlertSummary: {
+        additionalProperties: false,
+        properties: {
+          assignedTo: {
+            oneOf: [
+              {
+                $ref: "#/components/schemas/AlertUserReference",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          batch: {
+            oneOf: [
+              {
+                $ref: "#/components/schemas/AlertBatchReference",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          createdAt: {
+            format: "date-time",
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          product: {
+            oneOf: [
+              {
+                $ref: "#/components/schemas/AlertProductReference",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          rule: {
+            enum: ALERT_RULES,
+            type: "string",
+          },
+          severity: {
+            enum: ALERT_SEVERITIES,
+            type: "string",
+          },
+          status: {
+            enum: ALERT_STATUSES,
+            type: "string",
+          },
+          summary: {
+            type: "string",
+          },
+          title: {
+            type: "string",
+          },
+          updatedAt: {
+            format: "date-time",
+            type: "string",
+          },
+        },
+        required: [
+          "assignedTo",
+          "batch",
+          "createdAt",
+          "id",
+          "product",
+          "rule",
+          "severity",
+          "status",
+          "summary",
+          "title",
+          "updatedAt",
+        ],
+        type: "object",
+      },
+      AlertDetail: {
+        allOf: [
+          {
+            $ref: "#/components/schemas/AlertSummary",
+          },
+          {
+            additionalProperties: false,
+            properties: {
+              custodyEvent: {
+                oneOf: [
+                  {
+                    $ref: "#/components/schemas/AlertCustodyEventReference",
+                  },
+                  {
+                    type: "null",
+                  },
+                ],
+              },
+              decisionAt: {
+                oneOf: [
+                  {
+                    format: "date-time",
+                    type: "string",
+                  },
+                  {
+                    type: "null",
+                  },
+                ],
+              },
+              details: {
+                type: ["array", "boolean", "null", "number", "object", "string"],
+              },
+              evidenceRequest: {
+                type: ["null", "string"],
+              },
+              resolvedBy: {
+                oneOf: [
+                  {
+                    $ref: "#/components/schemas/AlertUserReference",
+                  },
+                  {
+                    type: "null",
+                  },
+                ],
+              },
+              reviewNotes: {
+                type: ["null", "string"],
+              },
+              verificationAttempt: {
+                oneOf: [
+                  {
+                    $ref: "#/components/schemas/AlertVerificationAttemptReference",
+                  },
+                  {
+                    type: "null",
+                  },
+                ],
+              },
+            },
+            required: [
+              "custodyEvent",
+              "decisionAt",
+              "details",
+              "evidenceRequest",
+              "resolvedBy",
+              "reviewNotes",
+              "verificationAttempt",
+            ],
+            type: "object",
+          },
+        ],
+      },
+      AlertsEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              alerts: {
+                items: {
+                  $ref: "#/components/schemas/AlertSummary",
+                },
+                type: "array",
+              },
+              pagination: {
+                $ref: "#/components/schemas/PaginationMetadata",
+              },
+            },
+            required: ["alerts", "pagination"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      AlertEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              alert: {
+                $ref: "#/components/schemas/AlertDetail",
+              },
+            },
+            required: ["alert"],
+            type: "object",
           },
         },
         required: ["data"],

@@ -9,6 +9,7 @@ export const AUTH_COOKIE_NAME = "verilot_session";
 export const CSRF_HEADER_NAME = "x-csrf-token";
 
 export const API_PATHS = {
+  alerts: `${API_PREFIX}/alerts`,
   batches: `${API_PREFIX}/batches`,
   products: `${API_PREFIX}/products`,
   locations: `${API_PREFIX}/locations`,
