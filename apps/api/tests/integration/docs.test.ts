@@ -30,6 +30,7 @@ describe("API documentation", () => {
         API_PATHS.auditRecords,
         `${API_PATHS.auditRecords}/{auditRecordId}`,
         API_PATHS.batches,
+        API_PATHS.dashboardSummary,
         `${API_PATHS.batches}/{batchId}`,
         `${API_PATHS.batches}/{batchId}/activate`,
         `${API_PATHS.batches}/{batchId}/close`,

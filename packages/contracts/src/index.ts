@@ -3,6 +3,7 @@ export * from "./audit-records.js";
 export * from "./batches.js";
 export * from "./auth.js";
 export * from "./constants.js";
+export * from "./dashboard.js";
 export * from "./products.js";
 export * from "./recalls.js";
 export * from "./locations.js";

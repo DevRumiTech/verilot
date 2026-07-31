@@ -9,6 +9,7 @@ import { alertRouter } from "./routes/alert.routes.js";
 import { auditRecordRouter } from "./routes/audit-record.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { batchRouter } from "./routes/batch.routes.js";
+import { dashboardRouter } from "./routes/dashboard.routes.js";
 import { docsRouter } from "./routes/docs.routes.js";
 import { productRouter } from "./routes/product.routes.js";
 import { recallRouter } from "./routes/recall.routes.js";
@@ -33,6 +34,7 @@ export function createApp() {
   app.use(alertRouter);
   app.use(auditRecordRouter);
   app.use(batchRouter);
+  app.use(dashboardRouter);
   app.use(productRouter);
   app.use(recallRouter);
   app.use(locationRouter);

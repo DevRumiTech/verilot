@@ -16,6 +16,7 @@ export const API_PATHS = {
   alerts: `${API_PREFIX}/alerts`,
   auditRecords: `${API_PREFIX}/audit-records`,
   batches: `${API_PREFIX}/batches`,
+  dashboardSummary: `${API_PREFIX}/dashboard/summary`,
   products: `${API_PREFIX}/products`,
   recalls: `${API_PREFIX}/recalls`,
   locations: `${API_PREFIX}/locations`,

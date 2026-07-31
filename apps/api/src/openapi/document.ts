@@ -5,12 +5,18 @@ import {
   API_PATHS,
   APPLICATION_NAME,
   AUTH_COOKIE_NAME,
+  BATCH_STATUSES,
   CSRF_HEADER_NAME,
+  DASHBOARD_RECENT_ITEM_LIMIT,
+  DASHBOARD_VERIFICATION_TREND_DAYS,
+  EVENT_TYPES,
   MAX_BATCH_PRODUCT_COUNT,
   PARTNER_API_KEY_HEADER_NAME,
   PARTNER_API_PATHS,
+  PRODUCT_STATUSES,
   RECALL_STATUSES,
   SYSTEM_PATHS,
+  VERIFICATION_RESULTS,
 } from "@verilot/contracts";
 
 const rateLimitHeaders = {
@@ -53,6 +59,23 @@ function errorResponse(description: string) {
   };
 }
 
+function enumCountSchema(values: readonly string[]) {
+  return {
+    additionalProperties: false,
+    properties: Object.fromEntries(
+      values.map((value) => [
+        value,
+        {
+          minimum: 0,
+          type: "integer",
+        },
+      ]),
+    ),
+    required: values,
+    type: "object",
+  } as const;
+}
+
 export const openApiDocument = {
   openapi: "3.1.1",
   info: {
@@ -90,6 +113,10 @@ export const openApiDocument = {
     {
       description: "Organization batch records.",
       name: "Batches",
+    },
+    {
+      description: "Bounded organization operational summary.",
+      name: "Dashboard",
     },
     {
       description: "Organization product records and custody history.",
@@ -1590,9 +1617,266 @@ export const openApiDocument = {
         tags: ["Partner verification"],
       },
     },
+    [API_PATHS.dashboardSummary]: {
+      get: {
+        description:
+          "Returns organization-scoped aggregate counts, bounded recent activity, and a short verification trend.",
+        operationId: "getDashboardSummary",
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/DashboardSummaryEnvelope",
+                },
+              },
+            },
+            description: "Organization dashboard summary returned.",
+          },
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "Get the organization dashboard summary",
+        tags: ["Dashboard"],
+      },
+    },
   },
   components: {
     schemas: {
+      DashboardCustodyActivity: {
+        additionalProperties: false,
+        properties: {
+          eventAt: {
+            format: "date-time",
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          location: {
+            oneOf: [
+              {
+                additionalProperties: false,
+                properties: {
+                  canton: {
+                    type: "string",
+                  },
+                  municipality: {
+                    type: "string",
+                  },
+                  name: {
+                    type: "string",
+                  },
+                },
+                required: ["canton", "municipality", "name"],
+                type: "object",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          product: {
+            additionalProperties: false,
+            properties: {
+              id: {
+                format: "uuid",
+                type: "string",
+              },
+              serialNumber: {
+                type: "string",
+              },
+            },
+            required: ["id", "serialNumber"],
+            type: "object",
+          },
+          recordedAt: {
+            format: "date-time",
+            type: "string",
+          },
+          type: {
+            enum: EVENT_TYPES,
+            type: "string",
+          },
+        },
+        required: ["eventAt", "id", "location", "product", "recordedAt", "type"],
+        type: "object",
+      },
+      DashboardAlert: {
+        additionalProperties: false,
+        properties: {
+          batch: {
+            oneOf: [
+              {
+                additionalProperties: false,
+                properties: {
+                  code: {
+                    type: "string",
+                  },
+                  id: {
+                    format: "uuid",
+                    type: "string",
+                  },
+                },
+                required: ["code", "id"],
+                type: "object",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          createdAt: {
+            format: "date-time",
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          product: {
+            oneOf: [
+              {
+                additionalProperties: false,
+                properties: {
+                  id: {
+                    format: "uuid",
+                    type: "string",
+                  },
+                  serialNumber: {
+                    type: "string",
+                  },
+                },
+                required: ["id", "serialNumber"],
+                type: "object",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          rule: {
+            enum: ALERT_RULES,
+            type: "string",
+          },
+          severity: {
+            enum: ALERT_SEVERITIES,
+            type: "string",
+          },
+          status: {
+            enum: ALERT_STATUSES,
+            type: "string",
+          },
+          title: {
+            type: "string",
+          },
+        },
+        required: ["batch", "createdAt", "id", "product", "rule", "severity", "status", "title"],
+        type: "object",
+      },
+      DashboardVerificationTrendPoint: {
+        additionalProperties: false,
+        properties: {
+          byResult: enumCountSchema(VERIFICATION_RESULTS),
+          periodStart: {
+            format: "date-time",
+            type: "string",
+          },
+          total: {
+            minimum: 0,
+            type: "integer",
+          },
+        },
+        required: ["byResult", "periodStart", "total"],
+        type: "object",
+      },
+      DashboardSummary: {
+        additionalProperties: false,
+        properties: {
+          alertCounts: {
+            additionalProperties: false,
+            properties: {
+              bySeverity: enumCountSchema(ALERT_SEVERITIES),
+              byStatus: enumCountSchema(ALERT_STATUSES),
+            },
+            required: ["bySeverity", "byStatus"],
+            type: "object",
+          },
+          batchCountsByStatus: enumCountSchema(BATCH_STATUSES),
+          generatedAt: {
+            format: "date-time",
+            type: "string",
+          },
+          productCountsByStatus: enumCountSchema(PRODUCT_STATUSES),
+          recallCountsByStatus: enumCountSchema(RECALL_STATUSES),
+          recentAlerts: {
+            items: {
+              $ref: "#/components/schemas/DashboardAlert",
+            },
+            maxItems: DASHBOARD_RECENT_ITEM_LIMIT,
+            type: "array",
+          },
+          recentCustodyActivity: {
+            items: {
+              $ref: "#/components/schemas/DashboardCustodyActivity",
+            },
+            maxItems: DASHBOARD_RECENT_ITEM_LIMIT,
+            type: "array",
+          },
+          recentVerificationTotals: {
+            additionalProperties: false,
+            properties: {
+              byResult: enumCountSchema(VERIFICATION_RESULTS),
+              from: {
+                format: "date-time",
+                type: "string",
+              },
+              to: {
+                format: "date-time",
+                type: "string",
+              },
+            },
+            required: ["byResult", "from", "to"],
+            type: "object",
+          },
+          verificationTrend: {
+            items: {
+              $ref: "#/components/schemas/DashboardVerificationTrendPoint",
+            },
+            maxItems: DASHBOARD_VERIFICATION_TREND_DAYS,
+            minItems: DASHBOARD_VERIFICATION_TREND_DAYS,
+            type: "array",
+          },
+        },
+        required: [
+          "alertCounts",
+          "batchCountsByStatus",
+          "generatedAt",
+          "productCountsByStatus",
+          "recallCountsByStatus",
+          "recentAlerts",
+          "recentCustodyActivity",
+          "recentVerificationTotals",
+          "verificationTrend",
+        ],
+        type: "object",
+      },
+      DashboardSummaryEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            $ref: "#/components/schemas/DashboardSummary",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
       ErrorEnvelope: {
         additionalProperties: false,
         properties: {
