@@ -16,6 +16,15 @@ const environmentSchema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().max(65_535).default(4_000),
+  RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().positive().max(10_000).default(20),
+  RATE_LIMIT_LOGIN_WINDOW_SECONDS: z.coerce.number().int().positive().max(86_400).default(900),
+  RATE_LIMIT_VERIFICATION_MAX: z.coerce.number().int().positive().max(100_000).default(60),
+  RATE_LIMIT_VERIFICATION_WINDOW_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(86_400)
+    .default(60),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().max(168).default(8),
 });
 
