@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Local configuration and logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Tool and operating-system files
+.DS_Store
+.vercel/
+*.tsbuildinfo
