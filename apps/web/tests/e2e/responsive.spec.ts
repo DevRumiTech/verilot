@@ -27,6 +27,25 @@ for (const viewport of viewports) {
     await expect(page.getByRole("rowheader").first()).toBeVisible();
     await expectNoHorizontalPageMovement(page);
 
+    await page.goto("/recalls");
+    await expect(page.getByRole("heading", { level: 1, name: "Recalls" })).toBeVisible();
+    const recallCard = await page.locator(".recall-controls").boundingBox();
+    expect(recallCard).not.toBeNull();
+    for (const label of ["Announced from", "Announced to"]) {
+      const input = page.getByLabel(label);
+      const inputBounds = await input.boundingBox();
+      const fieldBounds = await input.locator("xpath=..").boundingBox();
+      expect(inputBounds).not.toBeNull();
+      expect(fieldBounds).not.toBeNull();
+      expect((inputBounds?.x ?? 0) + (inputBounds?.width ?? 0)).toBeLessThanOrEqual(
+        (fieldBounds?.x ?? 0) + (fieldBounds?.width ?? 0) + 1,
+      );
+      expect((inputBounds?.x ?? 0) + (inputBounds?.width ?? 0)).toBeLessThanOrEqual(
+        (recallCard?.x ?? 0) + (recallCard?.width ?? 0) + 1,
+      );
+    }
+    await expectNoHorizontalPageMovement(page);
+
     if (viewport.width <= 430) {
       const menuButton = page.getByRole("button", { name: "Menu" });
       const dimensions = await menuButton.boundingBox();

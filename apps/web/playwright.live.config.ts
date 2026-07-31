@@ -13,8 +13,14 @@ export default defineConfig({
   outputDir: "./test-results/live-artifacts",
   projects: [
     {
-      name: "production",
+      name: "production-chromium",
+      testMatch: /production\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "mobile-webkit",
+      testMatch: /recalls-responsive\.spec\.ts/,
+      use: { ...devices["iPhone 13"] },
     },
   ],
   reporter: [["list"]],
