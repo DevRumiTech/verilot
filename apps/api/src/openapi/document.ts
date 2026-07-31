@@ -73,6 +73,10 @@ export const openApiDocument = {
       name: "Batches",
     },
     {
+      description: "Organization product records and custody history.",
+      name: "Products",
+    },
+    {
       description: "Organization user records.",
       name: "Users",
     },
@@ -318,6 +322,117 @@ export const openApiDocument = {
         ],
         summary: "Get organization batch",
         tags: ["Batches"],
+      },
+    },
+    [API_PATHS.products]: {
+      get: {
+        operationId: "listProducts",
+        parameters: [
+          {
+            in: "query",
+            name: "page",
+            schema: {
+              default: 1,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "pageSize",
+            schema: {
+              default: 20,
+              maximum: 100,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "batchId",
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "search",
+            schema: {
+              maxLength: 100,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "status",
+            schema: {
+              enum: ["PENDING", "VERIFIED", "WARNING", "BLOCKED", "RECALLED", "DESTROYED"],
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ProductsEnvelope",
+                },
+              },
+            },
+            description: "Organization products returned.",
+          },
+          "400": errorResponse("Query values rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "List organization products",
+        tags: ["Products"],
+      },
+    },
+    [`${API_PATHS.products}/{productId}`]: {
+      get: {
+        operationId: "getProduct",
+        parameters: [
+          {
+            in: "path",
+            name: "productId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ProductEnvelope",
+                },
+              },
+            },
+            description: "Product and custody history returned.",
+          },
+          "400": errorResponse("Product identifier rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+          "404": errorResponse("Product not found."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "Get organization product",
+        tags: ["Products"],
       },
     },
     [API_PATHS.users]: {
@@ -694,6 +809,284 @@ export const openApiDocument = {
               },
             },
             required: ["batch"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      ProductBatchSummary: {
+        additionalProperties: false,
+        properties: {
+          code: {
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          lotNumber: {
+            type: "string",
+          },
+          productName: {
+            type: "string",
+          },
+          sku: {
+            type: "string",
+          },
+          status: {
+            enum: ["DRAFT", "ACTIVE", "RECALLED", "CLOSED"],
+            type: "string",
+          },
+        },
+        required: ["code", "id", "lotNumber", "productName", "sku", "status"],
+        type: "object",
+      },
+      ProductSummary: {
+        additionalProperties: false,
+        properties: {
+          activatedAt: {
+            oneOf: [
+              {
+                format: "date-time",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          batch: {
+            $ref: "#/components/schemas/ProductBatchSummary",
+          },
+          blockedAt: {
+            oneOf: [
+              {
+                format: "date-time",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          blockReason: {
+            oneOf: [
+              {
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          eventCount: {
+            minimum: 0,
+            type: "integer",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          serialNumber: {
+            type: "string",
+          },
+          status: {
+            enum: ["PENDING", "VERIFIED", "WARNING", "BLOCKED", "RECALLED", "DESTROYED"],
+            type: "string",
+          },
+          updatedAt: {
+            format: "date-time",
+            type: "string",
+          },
+        },
+        required: [
+          "activatedAt",
+          "batch",
+          "blockedAt",
+          "blockReason",
+          "eventCount",
+          "id",
+          "serialNumber",
+          "status",
+          "updatedAt",
+        ],
+        type: "object",
+      },
+      ProductCustodyEvent: {
+        additionalProperties: false,
+        properties: {
+          actor: {
+            oneOf: [
+              {
+                additionalProperties: false,
+                properties: {
+                  displayName: {
+                    type: "string",
+                  },
+                },
+                required: ["displayName"],
+                type: "object",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          eventAt: {
+            format: "date-time",
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          location: {
+            oneOf: [
+              {
+                additionalProperties: false,
+                properties: {
+                  canton: {
+                    type: "string",
+                  },
+                  countryCode: {
+                    type: "string",
+                  },
+                  municipality: {
+                    type: "string",
+                  },
+                  name: {
+                    type: "string",
+                  },
+                },
+                required: ["canton", "countryCode", "municipality", "name"],
+                type: "object",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          notes: {
+            oneOf: [
+              {
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          organization: {
+            additionalProperties: false,
+            properties: {
+              name: {
+                type: "string",
+              },
+              type: {
+                type: "string",
+              },
+            },
+            required: ["name", "type"],
+            type: "object",
+          },
+          recordedAt: {
+            format: "date-time",
+            type: "string",
+          },
+          shipmentReference: {
+            oneOf: [
+              {
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          transportMode: {
+            oneOf: [
+              {
+                enum: ["AIR", "HAND_CARRIED", "RAIL", "ROAD", "SEA"],
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          type: {
+            type: "string",
+          },
+        },
+        required: [
+          "actor",
+          "eventAt",
+          "id",
+          "location",
+          "notes",
+          "organization",
+          "recordedAt",
+          "shipmentReference",
+          "transportMode",
+          "type",
+        ],
+        type: "object",
+      },
+      ProductDetail: {
+        allOf: [
+          {
+            $ref: "#/components/schemas/ProductSummary",
+          },
+          {
+            additionalProperties: false,
+            properties: {
+              custodyEvents: {
+                items: {
+                  $ref: "#/components/schemas/ProductCustodyEvent",
+                },
+                type: "array",
+              },
+            },
+            required: ["custodyEvents"],
+            type: "object",
+          },
+        ],
+      },
+      ProductsEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              pagination: {
+                $ref: "#/components/schemas/PaginationMetadata",
+              },
+              products: {
+                items: {
+                  $ref: "#/components/schemas/ProductSummary",
+                },
+                type: "array",
+              },
+            },
+            required: ["pagination", "products"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      ProductEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              product: {
+                $ref: "#/components/schemas/ProductDetail",
+              },
+            },
+            required: ["product"],
             type: "object",
           },
         },

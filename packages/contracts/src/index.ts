@@ -1,5 +1,6 @@
 export * from "./batches.js";
 export * from "./auth.js";
 export * from "./constants.js";
+export * from "./products.js";
 export * from "./users.js";
 export * from "./verification.js";

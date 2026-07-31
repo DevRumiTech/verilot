@@ -8,6 +8,7 @@ import { requestContext } from "./middleware/request-context.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { batchRouter } from "./routes/batch.routes.js";
 import { docsRouter } from "./routes/docs.routes.js";
+import { productRouter } from "./routes/product.routes.js";
 import { systemRouter } from "./routes/system.routes.js";
 import { userRouter } from "./routes/user.routes.js";
 import { verificationRouter } from "./routes/verification.routes.js";
@@ -25,6 +26,7 @@ export function createApp() {
   app.use(systemRouter);
   app.use(authRouter);
   app.use(batchRouter);
+  app.use(productRouter);
   app.use(userRouter);
   app.use(verificationRouter);
 
