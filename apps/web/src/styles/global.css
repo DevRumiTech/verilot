@@ -921,6 +921,41 @@ button:disabled {
   padding-top: 1rem;
 }
 
+.workflow-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.span-all {
+  grid-column: 1 / -1;
+}
+
+.serial-field-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.quantity-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.2rem 1rem;
+  border: 1px solid var(--grey-200);
+  border-radius: 0.35rem;
+  background: #fafafa;
+  padding: 0.75rem;
+}
+
+.quantity-summary span,
+.quantity-summary small {
+  color: var(--graphite-500);
+  font-size: 0.72rem;
+}
+
+.quantity-summary small {
+  grid-column: 1 / -1;
+}
+
 .dialog-copy {
   margin: 0;
   color: var(--graphite-700);
@@ -1297,6 +1332,11 @@ button:disabled {
 
   .event-meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workflow-form-grid,
+  .serial-field-group {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .detail-grid {
