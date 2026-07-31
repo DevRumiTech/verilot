@@ -6,6 +6,8 @@ export const API_PREFIX = `/api/${API_VERSION}` as const;
 
 export const AUTH_COOKIE_NAME = "verilot_session";
 
+export const CSRF_HEADER_NAME = "x-csrf-token";
+
 export const API_PATHS = {
   auth: {
     login: `${API_PREFIX}/auth/login`,

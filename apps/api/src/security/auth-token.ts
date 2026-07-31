@@ -36,6 +36,13 @@ export function authValueMatchesHash(value: string, expectedHash: string): boole
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
+export function authValuesMatch(first: string, second: string): boolean {
+  const firstValue = Buffer.from(first);
+  const secondValue = Buffer.from(second);
+
+  return firstValue.length === secondValue.length && timingSafeEqual(firstValue, secondValue);
+}
+
 export async function createAuthToken(input: CreateAuthTokenInput): Promise<string> {
   return new SignJWT({
     csrf: input.csrfToken,

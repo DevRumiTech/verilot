@@ -12,9 +12,11 @@ export const logger = pino({
     paths: [
       "request.headers.authorization",
       "request.headers.cookie",
+      "request.headers['x-csrf-token']",
       "response.headers.set-cookie",
       "req.headers.authorization",
       "req.headers.cookie",
+      "req.headers['x-csrf-token']",
       "res.headers.set-cookie",
     ],
   },

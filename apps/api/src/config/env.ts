@@ -3,6 +3,12 @@ import "dotenv/config";
 import { z } from "zod";
 
 const environmentSchema = z.object({
+  APP_ORIGIN: z
+    .url()
+    .refine((value) => ["http:", "https:"].includes(new URL(value).protocol), {
+      message: "APP_ORIGIN must use HTTP or HTTPS.",
+    })
+    .transform((value) => new URL(value).origin),
   DATA_HASH_SECRET: z.string().min(32),
   DATABASE_URL: z.url().startsWith("postgresql://"),
   HOST: z.string().trim().min(1).default("127.0.0.1"),

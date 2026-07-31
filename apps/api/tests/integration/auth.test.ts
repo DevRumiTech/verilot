@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 
-import { AUTH_COOKIE_NAME } from "@verilot/contracts";
+import { AUTH_COOKIE_NAME, CSRF_HEADER_NAME } from "@verilot/contracts";
 import { parseCookie } from "cookie";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { app } from "../../src/app.js";
 import { prisma } from "../../src/config/database.js";
+import { env } from "../../src/config/env.js";
 import { createAuthToken, hashAuthValue } from "../../src/security/auth-token.js";
 
 const createdSessionIds = new Set<string>();
@@ -88,6 +89,7 @@ describe("authentication sessions", () => {
   it("signs in an active user and returns the same safe session", async () => {
     const loginResponse = await request(app)
       .post("/api/v1/auth/login")
+      .set("Origin", env.APP_ORIGIN)
       .send({
         email: " OPERATOR@VERILOT.LOCAL ",
         password: "VeriLotOperator2026!",
@@ -133,9 +135,54 @@ describe("authentication sessions", () => {
 
     expect(sessionResponse.body.data).toEqual(loginResponse.body.data);
 
+    const missingCsrfResponse = await request(app)
+      .post("/api/v1/auth/logout")
+      .set("Cookie", cookiePair)
+      .set("Origin", env.APP_ORIGIN)
+      .expect(403);
+
+    expect(missingCsrfResponse.body.error).toMatchObject({
+      code: "CSRF_TOKEN_INVALID",
+      fieldErrors: {},
+      message: "CSRF token is missing or invalid.",
+    });
+
+    const mismatchedCsrfResponse = await request(app)
+      .post("/api/v1/auth/logout")
+      .set("Cookie", cookiePair)
+      .set(CSRF_HEADER_NAME, "not-the-session-csrf-token")
+      .set("Origin", env.APP_ORIGIN)
+      .expect(403);
+
+    expect(mismatchedCsrfResponse.body.error).toMatchObject({
+      code: "CSRF_TOKEN_INVALID",
+    });
+
+    const wrongOriginResponse = await request(app)
+      .post("/api/v1/auth/logout")
+      .set("Cookie", cookiePair)
+      .set(CSRF_HEADER_NAME, loginResponse.body.data.csrfToken)
+      .set("Origin", "https://untrusted.example")
+      .expect(403);
+
+    expect(wrongOriginResponse.body.error).toMatchObject({
+      code: "ORIGIN_NOT_ALLOWED",
+      fieldErrors: {},
+      message: "Request origin is not allowed.",
+    });
+
+    const sessionAfterRejections = await request(app)
+      .get("/api/v1/auth/session")
+      .set("Cookie", cookiePair)
+      .expect(200);
+
+    expect(sessionAfterRejections.body.data.user.email).toBe("operator@verilot.local");
+
     const logoutResponse = await request(app)
       .post("/api/v1/auth/logout")
       .set("Cookie", cookiePair)
+      .set(CSRF_HEADER_NAME, loginResponse.body.data.csrfToken)
+      .set("Origin", env.APP_ORIGIN)
       .expect(204);
 
     expect(readSetCookieHeader(logoutResponse)).toContain("Max-Age=0");
@@ -167,6 +214,7 @@ describe("authentication sessions", () => {
   it("uses the same error for wrong, unknown, and suspended credentials", async () => {
     const wrongPasswordResponse = await request(app)
       .post("/api/v1/auth/login")
+      .set("Origin", env.APP_ORIGIN)
       .send({
         email: "operator@verilot.local",
         password: "incorrect-password",
@@ -174,6 +222,7 @@ describe("authentication sessions", () => {
       .expect(401);
     const unknownUserResponse = await request(app)
       .post("/api/v1/auth/login")
+      .set("Origin", env.APP_ORIGIN)
       .send({
         email: "unknown@verilot.local",
         password: "incorrect-password",
@@ -181,6 +230,7 @@ describe("authentication sessions", () => {
       .expect(401);
     const suspendedResponse = await request(app)
       .post("/api/v1/auth/login")
+      .set("Origin", env.APP_ORIGIN)
       .send({
         email: "partner@alpine-transit.local",
         password: "VeriLotOperator2026!",
@@ -232,6 +282,7 @@ describe("authentication sessions", () => {
   it("returns field errors for malformed credentials", async () => {
     const response = await request(app)
       .post("/api/v1/auth/login")
+      .set("Origin", env.APP_ORIGIN)
       .send({
         email: "invalid",
         password: "",
@@ -246,5 +297,30 @@ describe("authentication sessions", () => {
       },
       message: "The sign-in request is invalid.",
     });
+  });
+
+  it("rejects login requests from missing and untrusted origins", async () => {
+    const body = {
+      email: "operator@verilot.local",
+      password: "VeriLotOperator2026!",
+    };
+    const missingOriginResponse = await request(app)
+      .post("/api/v1/auth/login")
+      .send(body)
+      .expect(403);
+    const untrustedOriginResponse = await request(app)
+      .post("/api/v1/auth/login")
+      .set("Origin", "https://untrusted.example")
+      .send(body)
+      .expect(403);
+
+    for (const response of [missingOriginResponse, untrustedOriginResponse]) {
+      expect(response.body.error).toMatchObject({
+        code: "ORIGIN_NOT_ALLOWED",
+        fieldErrors: {},
+        message: "Request origin is not allowed.",
+      });
+      expect(response.headers["set-cookie"]).toBeUndefined();
+    }
   });
 });

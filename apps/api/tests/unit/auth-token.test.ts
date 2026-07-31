@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   authValueMatchesHash,
+  authValuesMatch,
   createAuthToken,
   hashAuthValue,
   verifyAuthToken,
@@ -44,5 +45,11 @@ describe("authentication tokens", () => {
     expect(hash).not.toContain("session-secret");
     expect(authValueMatchesHash("session-secret", hash)).toBe(true);
     expect(authValueMatchesHash("different-secret", hash)).toBe(false);
+  });
+
+  it("compares request tokens in constant time", () => {
+    expect(authValuesMatch("matching-token", "matching-token")).toBe(true);
+    expect(authValuesMatch("matching-token", "different-token")).toBe(false);
+    expect(authValuesMatch("short", "longer-token")).toBe(false);
   });
 });
