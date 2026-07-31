@@ -5,6 +5,7 @@ import { AppShell } from "./AppShell.js";
 import { NotFoundPage } from "./NotFoundPage.js";
 import { SignInPage } from "./SignInPage.js";
 import { AuthGuard } from "../auth/SessionProvider.js";
+import { DashboardPage } from "../features/dashboard/DashboardPage.js";
 
 function PendingPage({ description, title }: { description: string; title: string }) {
   return (
@@ -34,15 +35,7 @@ export function App() {
         }
       >
         <Route index element={<Navigate replace to="/dashboard" />} />
-        <Route
-          path="dashboard"
-          element={
-            <PendingPage
-              description="Monitor product movement, verification, anomalies, and recall activity."
-              title="Dashboard"
-            />
-          }
-        />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route
           path="products/*"
           element={
