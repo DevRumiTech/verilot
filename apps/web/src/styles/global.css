@@ -652,6 +652,10 @@ button:disabled {
   grid-template-columns: minmax(12rem, 1fr) repeat(3, minmax(8.5rem, 0.45fr));
 }
 
+.audit-controls {
+  grid-template-columns: repeat(4, minmax(9rem, 1fr));
+}
+
 .list-controls-many .control-actions,
 .recall-controls .control-actions {
   grid-column: 1 / -1;
@@ -670,6 +674,23 @@ button:disabled {
   margin: -0.25rem 0 1rem;
   color: var(--graphite-700);
   font-size: 0.8rem;
+}
+
+.scope-marker {
+  display: inline-flex;
+  border: 1px solid var(--grey-300);
+  border-radius: 999px;
+  background: #fafafa;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.scope-marker-global {
+  border-color: #d59b96;
+  color: var(--red-700);
+  background: #fff6f5;
 }
 
 .table-wrap {

@@ -9,23 +9,9 @@ import { DashboardPage } from "../features/dashboard/DashboardPage.js";
 import { BatchDetailPage, BatchListPage } from "../features/batches/BatchPages.js";
 import { ProductDetailPage, ProductListPage } from "../features/products/ProductPages.js";
 import { AlertDetailPage, AlertListPage } from "../features/alerts/AlertPages.js";
+import { AuditDetailPage, AuditListPage } from "../features/audit/AuditPages.js";
+import { LocationListPage } from "../features/locations/LocationPages.js";
 import { RecallDetailPage, RecallListPage } from "../features/recalls/RecallPages.js";
-
-function PendingPage({ description, title }: { description: string; title: string }) {
-  return (
-    <section className="page" aria-labelledby="page-title">
-      <header className="page-header">
-        <p className="eyebrow">Operations</p>
-        <h1 id="page-title">{title}</h1>
-        <p>{description}</p>
-      </header>
-      <div className="surface empty-state">
-        <h2>API view scheduled</h2>
-        <p>This route is ready for its resource interface in the next delivery milestone.</p>
-      </div>
-    </section>
-  );
-}
 
 export function App() {
   return (
@@ -48,23 +34,20 @@ export function App() {
         <Route path="alerts/:alertId" element={<AlertDetailPage />} />
         <Route path="recalls" element={<RecallListPage />} />
         <Route path="recalls/:recallId" element={<RecallDetailPage />} />
+        <Route path="locations" element={<LocationListPage />} />
         <Route
-          path="locations"
+          path="audit"
           element={
-            <PendingPage
-              description="Reference Swiss custody locations and global handoff points."
-              title="Locations"
-            />
+            <AuthGuard permission={PERMISSIONS.auditRecordsRead}>
+              <AuditListPage />
+            </AuthGuard>
           }
         />
         <Route
-          path="audit/*"
+          path="audit/:auditRecordId"
           element={
             <AuthGuard permission={PERMISSIONS.auditRecordsRead}>
-              <PendingPage
-                description="Inspect immutable administrative and operational records."
-                title="Audit"
-              />
+              <AuditDetailPage />
             </AuthGuard>
           }
         />
