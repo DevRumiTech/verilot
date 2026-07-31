@@ -69,6 +69,10 @@ export const openApiDocument = {
       name: "Authentication",
     },
     {
+      description: "Organization batch records.",
+      name: "Batches",
+    },
+    {
       description: "Organization user records.",
       name: "Users",
     },
@@ -211,6 +215,109 @@ export const openApiDocument = {
         ],
         summary: "Sign out",
         tags: ["Authentication"],
+      },
+    },
+    [API_PATHS.batches]: {
+      get: {
+        operationId: "listBatches",
+        parameters: [
+          {
+            in: "query",
+            name: "page",
+            schema: {
+              default: 1,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "pageSize",
+            schema: {
+              default: 20,
+              maximum: 100,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "search",
+            schema: {
+              maxLength: 100,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "status",
+            schema: {
+              enum: ["DRAFT", "ACTIVE", "RECALLED", "CLOSED"],
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/BatchesEnvelope",
+                },
+              },
+            },
+            description: "Organization batches returned.",
+          },
+          "400": errorResponse("Query values rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "List organization batches",
+        tags: ["Batches"],
+      },
+    },
+    [`${API_PATHS.batches}/{batchId}`]: {
+      get: {
+        operationId: "getBatch",
+        parameters: [
+          {
+            in: "path",
+            name: "batchId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/BatchEnvelope",
+                },
+              },
+            },
+            description: "Organization batch returned.",
+          },
+          "400": errorResponse("Batch identifier rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Permission denied."),
+          "404": errorResponse("Batch not found."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "Get organization batch",
+        tags: ["Batches"],
       },
     },
     [API_PATHS.users]: {
@@ -440,6 +547,154 @@ export const openApiDocument = {
         properties: {
           data: {
             $ref: "#/components/schemas/AuthSession",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      BatchSummary: {
+        additionalProperties: false,
+        properties: {
+          activatedAt: {
+            oneOf: [
+              {
+                format: "date-time",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          code: {
+            type: "string",
+          },
+          expiresAt: {
+            oneOf: [
+              {
+                format: "date",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          lotNumber: {
+            type: "string",
+          },
+          manufacturedAt: {
+            format: "date",
+            type: "string",
+          },
+          productCount: {
+            minimum: 0,
+            type: "integer",
+          },
+          productName: {
+            type: "string",
+          },
+          recallCount: {
+            minimum: 0,
+            type: "integer",
+          },
+          serialEnd: {
+            type: "integer",
+          },
+          serialPrefix: {
+            type: "string",
+          },
+          serialStart: {
+            type: "integer",
+          },
+          sku: {
+            type: "string",
+          },
+          status: {
+            enum: ["DRAFT", "ACTIVE", "RECALLED", "CLOSED"],
+            type: "string",
+          },
+        },
+        required: [
+          "activatedAt",
+          "code",
+          "expiresAt",
+          "id",
+          "lotNumber",
+          "manufacturedAt",
+          "productCount",
+          "productName",
+          "recallCount",
+          "serialEnd",
+          "serialPrefix",
+          "serialStart",
+          "sku",
+          "status",
+        ],
+        type: "object",
+      },
+      PaginationMetadata: {
+        additionalProperties: false,
+        properties: {
+          page: {
+            minimum: 1,
+            type: "integer",
+          },
+          pageSize: {
+            minimum: 1,
+            type: "integer",
+          },
+          totalItems: {
+            minimum: 0,
+            type: "integer",
+          },
+          totalPages: {
+            minimum: 0,
+            type: "integer",
+          },
+        },
+        required: ["page", "pageSize", "totalItems", "totalPages"],
+        type: "object",
+      },
+      BatchesEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              batches: {
+                items: {
+                  $ref: "#/components/schemas/BatchSummary",
+                },
+                type: "array",
+              },
+              pagination: {
+                $ref: "#/components/schemas/PaginationMetadata",
+              },
+            },
+            required: ["batches", "pagination"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      BatchEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              batch: {
+                $ref: "#/components/schemas/BatchSummary",
+              },
+            },
+            required: ["batch"],
+            type: "object",
           },
         },
         required: ["data"],

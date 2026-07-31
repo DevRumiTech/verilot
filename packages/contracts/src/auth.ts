@@ -3,15 +3,16 @@ export const USER_ROLES = ["ADMINISTRATOR", "OPERATOR", "INSPECTOR"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const PERMISSIONS = {
+  batchesRead: "batches:read",
   usersRead: "users:read",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly Permission[]>> = {
-  ADMINISTRATOR: [PERMISSIONS.usersRead],
-  OPERATOR: [],
-  INSPECTOR: [],
+  ADMINISTRATOR: [PERMISSIONS.batchesRead, PERMISSIONS.usersRead],
+  OPERATOR: [PERMISSIONS.batchesRead],
+  INSPECTOR: [PERMISSIONS.batchesRead],
 };
 
 export interface AuthenticatedUser {
