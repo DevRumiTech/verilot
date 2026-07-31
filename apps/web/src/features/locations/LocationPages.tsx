@@ -76,6 +76,18 @@ function LocationControls() {
     setParameters(next);
   }
 
+  function changeSearch(value: string): void {
+    setSearch(value);
+
+    if (value.trim().length !== 0 || !parameters.has("search")) {
+      return;
+    }
+
+    const next = new URLSearchParams(parameters);
+    next.delete("search");
+    setParameters(next);
+  }
+
   function changeCanton(value: string): void {
     const next = new URLSearchParams(parameters);
 
@@ -101,7 +113,7 @@ function LocationControls() {
           id="location-search"
           maxLength={100}
           name="search"
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => changeSearch(event.target.value)}
           type="search"
           value={search}
         />

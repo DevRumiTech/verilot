@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { Navigate, useLocation } from "react-router";
 
 import { useSession } from "../auth/SessionProvider.js";
+import { BrandMark } from "./BrandMark.js";
 import { ApiClientError } from "../lib/api-client.js";
 import { moveKeyboardPosition } from "../lib/keyboard.js";
 
@@ -129,9 +130,7 @@ export function SignInPage() {
     <main className="auth-layout" id="main-content">
       <section className="auth-intro" aria-labelledby="sign-in-title">
         <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">
-            VL
-          </span>
+          <BrandMark />
           <span>VeriLot</span>
         </div>
         <div>

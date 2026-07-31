@@ -179,7 +179,7 @@ export function AlertListPage() {
         ) : (
           <>
             <div className="surface table-wrap">
-              <table className="data-table">
+              <table className="data-table alerts-table">
                 <caption className="visually-hidden">Alerts matching the current filters</caption>
                 <thead>
                   <tr>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet } from "react-router";
 
 import { useSession } from "../auth/SessionProvider.js";
+import { BrandMark } from "./BrandMark.js";
 import { moveKeyboardPosition } from "../lib/keyboard.js";
 
 interface NavigationItem {
@@ -52,9 +53,7 @@ function Navigation({ closeMenu, label }: { closeMenu?: () => void; label: strin
 function Brand() {
   return (
     <NavLink aria-label="VeriLot dashboard" className="brand-lockup shell-brand" to="/dashboard">
-      <span className="brand-mark" aria-hidden="true">
-        VL
-      </span>
+      <BrandMark />
       <span>VeriLot</span>
     </NavLink>
   );
