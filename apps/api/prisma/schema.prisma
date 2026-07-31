@@ -1,0 +1,435 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrganizationType {
+  MANUFACTURER
+  LOGISTICS
+  INSPECTOR
+  RETAILER
+}
+
+enum UserRole {
+  ADMINISTRATOR
+  OPERATOR
+  INSPECTOR
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum BatchStatus {
+  DRAFT
+  ACTIVE
+  RECALLED
+  CLOSED
+}
+
+enum ProductStatus {
+  PENDING
+  VERIFIED
+  WARNING
+  BLOCKED
+  RECALLED
+  DESTROYED
+}
+
+enum EventType {
+  MANUFACTURED
+  PACKED
+  DISPATCHED
+  RECEIVED
+  INSPECTED
+  SOLD
+  RETURNED
+  BLOCKED
+  RELEASED
+  RECALLED
+  DESTROYED
+  CORRECTION
+}
+
+enum TransportMode {
+  ROAD
+  RAIL
+  AIR
+  WATER
+  HAND_CARRIED
+  UNKNOWN
+}
+
+enum AlertRule {
+  DUPLICATE_SCAN
+  IMPOSSIBLE_TRAVEL
+  INVALID_EVENT_ORDER
+  SCAN_AFTER_BLOCK
+  SCAN_AFTER_RECALL
+  UNKNOWN_LOCATION
+  REUSED_IDEMPOTENCY_KEY
+  EXCESSIVE_VERIFICATION_ATTEMPTS
+  MISSING_ORGANIZATION_HANDOFF
+  FUTURE_TIMESTAMP
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  IN_REVIEW
+  EVIDENCE_REQUESTED
+  RESOLVED
+  DISMISSED
+}
+
+enum RecallStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum VerificationResult {
+  VERIFIED
+  WARNING
+  BLOCKED
+  RECALLED
+  UNKNOWN
+}
+
+enum PartnerRequestOutcome {
+  VALID
+  DUPLICATE
+  INVALID
+}
+
+model Organization {
+  id                   String                @id @default(uuid()) @db.Uuid
+  name                 String                @db.VarChar(160)
+  slug                 String                @unique @db.VarChar(80)
+  type                 OrganizationType
+  createdAt            DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime              @updatedAt @db.Timestamptz(3)
+  users                User[]
+  locations            Location[]
+  batches              Batch[]
+  custodyEvents        CustodyEvent[]
+  alerts               Alert[]
+  recalls              Recall[]
+  auditRecords         AuditRecord[]
+  apiClients           ApiClient[]
+  idempotencyRecords   IdempotencyRecord[]
+  verificationAttempts VerificationAttempt[]
+
+  @@map("organizations")
+}
+
+model User {
+  id                String         @id @default(uuid()) @db.Uuid
+  organizationId    String         @db.Uuid
+  email             String         @unique @db.VarChar(254)
+  displayName       String         @db.VarChar(120)
+  passwordHash      String         @db.VarChar(100)
+  role              UserRole
+  status            UserStatus     @default(ACTIVE)
+  lastSignedInAt    DateTime?      @db.Timestamptz(3)
+  createdAt         DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime       @updatedAt @db.Timestamptz(3)
+  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  sessions          AuthSession[]
+  createdBatches    Batch[]        @relation("BatchCreator")
+  custodyEvents     CustodyEvent[]
+  assignedAlerts    Alert[]        @relation("AlertAssignee")
+  resolvedAlerts    Alert[]        @relation("AlertResolver")
+  createdRecalls    Recall[]
+  auditRecords      AuditRecord[]
+  createdApiClients ApiClient[]    @relation("ApiClientCreator")
+
+  @@index([organizationId, role])
+  @@map("users")
+}
+
+model AuthSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  tokenHash  String    @unique @db.Char(64)
+  csrfHash   String    @db.Char(64)
+  expiresAt  DateTime  @db.Timestamptz(3)
+  lastSeenAt DateTime  @default(now()) @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("auth_sessions")
+}
+
+model Location {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String?        @db.Uuid
+  code           String         @unique @db.VarChar(40)
+  name           String         @db.VarChar(120)
+  municipality   String         @db.VarChar(100)
+  canton         String         @db.Char(2)
+  countryCode    String         @default("CH") @db.Char(2)
+  latitude       Decimal        @db.Decimal(9, 6)
+  longitude      Decimal        @db.Decimal(9, 6)
+  isKnown        Boolean        @default(true)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  custodyEvents  CustodyEvent[]
+
+  @@index([municipality, canton])
+  @@map("locations")
+}
+
+model Batch {
+  id                         String       @id @default(uuid()) @db.Uuid
+  manufacturerOrganizationId String       @db.Uuid
+  createdById                String       @db.Uuid
+  code                       String       @unique @db.VarChar(50)
+  productName                String       @db.VarChar(160)
+  sku                        String       @db.VarChar(80)
+  lotNumber                  String       @db.VarChar(80)
+  serialPrefix               String       @db.VarChar(24)
+  serialStart                Int
+  serialEnd                  Int
+  status                     BatchStatus  @default(DRAFT)
+  manufacturedAt             DateTime     @db.Date
+  expiresAt                  DateTime?    @db.Date
+  activatedAt                DateTime?    @db.Timestamptz(3)
+  createdAt                  DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime     @updatedAt @db.Timestamptz(3)
+  manufacturerOrganization   Organization @relation(fields: [manufacturerOrganizationId], references: [id], onDelete: Restrict)
+  createdBy                  User         @relation("BatchCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  products                   Product[]
+  alerts                     Alert[]
+  recalls                    Recall[]
+
+  @@unique([manufacturerOrganizationId, lotNumber])
+  @@index([manufacturerOrganizationId, status, createdAt])
+  @@map("batches")
+}
+
+model Product {
+  id            String         @id @default(uuid()) @db.Uuid
+  batchId       String         @db.Uuid
+  serialNumber  String         @unique @db.VarChar(50)
+  qrPayload     String         @unique @db.VarChar(500)
+  status        ProductStatus  @default(PENDING)
+  activatedAt   DateTime?      @db.Timestamptz(3)
+  blockedAt     DateTime?      @db.Timestamptz(3)
+  blockReason   String?        @db.VarChar(500)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @db.Timestamptz(3)
+  batch         Batch          @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  custodyEvents CustodyEvent[]
+  alerts        Alert[]
+
+  @@index([batchId, status])
+  @@index([status, updatedAt])
+  @@map("products")
+}
+
+model CustodyEvent {
+  id                String         @id @default(uuid()) @db.Uuid
+  productId         String         @db.Uuid
+  organizationId    String         @db.Uuid
+  actorId           String?        @db.Uuid
+  locationId        String?        @db.Uuid
+  recallId          String?        @db.Uuid
+  correctedEventId  String?        @db.Uuid
+  type              EventType
+  eventAt           DateTime       @db.Timestamptz(3)
+  recordedAt        DateTime       @default(now()) @db.Timestamptz(3)
+  shipmentReference String?        @db.VarChar(100)
+  transportMode     TransportMode?
+  notes             String?        @db.VarChar(1000)
+  idempotencyKey    String?        @db.VarChar(120)
+  requestId         String         @db.VarChar(100)
+  metadata          Json?
+  product           Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor             User?          @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  location          Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  recall            Recall?        @relation(fields: [recallId], references: [id], onDelete: SetNull)
+  correctedEvent    CustodyEvent?  @relation("EventCorrections", fields: [correctedEventId], references: [id], onDelete: Restrict)
+  corrections       CustodyEvent[] @relation("EventCorrections")
+  alerts            Alert[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([productId, eventAt, recordedAt])
+  @@index([organizationId, recordedAt])
+  @@map("custody_events")
+}
+
+model VerificationAttempt {
+  id             String             @id @default(uuid()) @db.Uuid
+  organizationId String?            @db.Uuid
+  serialNumber   String             @db.VarChar(80)
+  ipHash         String             @db.Char(64)
+  userAgentHash  String?            @db.Char(64)
+  result         VerificationResult
+  requestId      String             @db.VarChar(100)
+  attemptedAt    DateTime           @default(now()) @db.Timestamptz(3)
+  organization   Organization?      @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  alerts         Alert[]
+
+  @@index([serialNumber, attemptedAt])
+  @@index([ipHash, attemptedAt])
+  @@map("verification_attempts")
+}
+
+model Alert {
+  id                    String               @id @default(uuid()) @db.Uuid
+  organizationId        String               @db.Uuid
+  productId             String?              @db.Uuid
+  batchId               String?              @db.Uuid
+  eventId               String?              @db.Uuid
+  verificationAttemptId String?              @db.Uuid
+  assignedToId          String?              @db.Uuid
+  resolvedById          String?              @db.Uuid
+  rule                  AlertRule
+  severity              AlertSeverity
+  status                AlertStatus          @default(OPEN)
+  title                 String               @db.VarChar(180)
+  summary               String               @db.VarChar(1000)
+  details               Json
+  evidenceRequest       String?              @db.VarChar(1000)
+  reviewNotes           String?              @db.VarChar(2000)
+  decisionAt            DateTime?            @db.Timestamptz(3)
+  createdAt             DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime             @updatedAt @db.Timestamptz(3)
+  organization          Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  product               Product?             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  batch                 Batch?               @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  event                 CustodyEvent?        @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  verificationAttempt   VerificationAttempt? @relation(fields: [verificationAttemptId], references: [id], onDelete: Restrict)
+  assignedTo            User?                @relation("AlertAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  resolvedBy            User?                @relation("AlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@unique([rule, eventId])
+  @@unique([rule, verificationAttemptId])
+  @@index([organizationId, status, severity, createdAt])
+  @@index([productId, status])
+  @@map("alerts")
+}
+
+model Recall {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @db.Uuid
+  batchId        String         @db.Uuid
+  createdById    String         @db.Uuid
+  reference      String         @unique @db.VarChar(60)
+  status         RecallStatus   @default(ACTIVE)
+  reason         String         @db.VarChar(1000)
+  requestId      String         @db.VarChar(100)
+  announcedAt    DateTime       @default(now()) @db.Timestamptz(3)
+  completedAt    DateTime?      @db.Timestamptz(3)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  batch          Batch          @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  createdBy      User           @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  events         CustodyEvent[]
+
+  @@index([organizationId, status, announcedAt])
+  @@index([batchId, status])
+  @@map("recalls")
+}
+
+model AuditRecord {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  actorId        String?      @db.Uuid
+  actorEmail     String?      @db.VarChar(254)
+  actorRole      UserRole?
+  action         String       @db.VarChar(100)
+  entityType     String       @db.VarChar(80)
+  entityId       String       @db.VarChar(100)
+  reason         String?      @db.VarChar(1000)
+  beforeData     Json?
+  afterData      Json?
+  requestId      String       @db.VarChar(100)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor          User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_records")
+}
+
+model ApiClient {
+  id             String              @id @default(uuid()) @db.Uuid
+  organizationId String              @db.Uuid
+  createdById    String              @db.Uuid
+  name           String              @db.VarChar(120)
+  keyPrefix      String              @unique @db.VarChar(24)
+  keyHash        String              @unique @db.Char(64)
+  lastUsedAt     DateTime?           @db.Timestamptz(3)
+  expiresAt      DateTime?           @db.Timestamptz(3)
+  revokedAt      DateTime?           @db.Timestamptz(3)
+  createdAt      DateTime            @default(now()) @db.Timestamptz(3)
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy      User                @relation("ApiClientCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  requests       PartnerApiRequest[]
+
+  @@index([organizationId, revokedAt])
+  @@map("api_clients")
+}
+
+model PartnerApiRequest {
+  id             String                @id @default(uuid()) @db.Uuid
+  apiClientId    String                @db.Uuid
+  idempotencyKey String?               @db.VarChar(120)
+  requestId      String                @unique @db.VarChar(100)
+  outcome        PartnerRequestOutcome
+  requestBody    Json
+  responseBody   Json
+  httpStatus     Int
+  createdAt      DateTime              @default(now()) @db.Timestamptz(3)
+  apiClient      ApiClient             @relation(fields: [apiClientId], references: [id], onDelete: Restrict)
+
+  @@index([apiClientId, createdAt])
+  @@map("partner_api_requests")
+}
+
+model IdempotencyRecord {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  scope          String       @db.VarChar(80)
+  key            String       @db.VarChar(120)
+  requestHash    String       @db.Char(64)
+  responseStatus Int
+  responseBody   Json
+  expiresAt      DateTime     @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, scope, key])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}
+
+model RateLimitCounter {
+  bucketKey   String   @id @db.VarChar(180)
+  hitCount    Int      @default(1)
+  windowStart DateTime @db.Timestamptz(3)
+  expiresAt   DateTime @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("rate_limit_counters")
+}

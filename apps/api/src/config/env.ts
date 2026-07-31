@@ -1,6 +1,9 @@
+import "dotenv/config";
+
 import { z } from "zod";
 
 const environmentSchema = z.object({
+  DATABASE_URL: z.url().startsWith("postgresql://"),
   HOST: z.string().trim().min(1).default("127.0.0.1"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
