@@ -34,7 +34,7 @@
   "packageManager": "npm@11.16.0",
   "devDependencies": {
     "prettier": "3.9.6",
-    "typescript": "7.0.2"
+    "typescript": "5.9.3"
   },
   "allowScripts": {
     "@scarf/scarf@1.4.0": false,
