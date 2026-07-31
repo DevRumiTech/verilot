@@ -49,6 +49,26 @@ describe("public product verification", () => {
       },
     });
 
+    const storedEvents = await prisma.$queryRaw<Array<{ eventAt: Date; sessionTimeZone: string }>>`
+      SELECT
+        ce."eventAt" AS "eventAt",
+        current_setting('TimeZone') AS "sessionTimeZone"
+      FROM custody_events ce
+      JOIN products p ON p.id = ce."productId"
+      WHERE p."serialNumber" = ${"VL-2026-000042"}
+      ORDER BY ce."eventAt" DESC
+      LIMIT 1
+    `;
+    const storedEvent = storedEvents[0];
+
+    if (storedEvent === undefined) {
+      throw new Error("Expected the stable custody event.");
+    }
+
+    expect(storedEvent.sessionTimeZone).toBe("UTC");
+    expect(storedEvent.eventAt.toISOString()).toBe("2026-07-30T09:00:00.000Z");
+    expect(response.body.data.timeline.at(-1)?.eventAt).toBe(storedEvent.eventAt.toISOString());
+
     for (const event of response.body.data.timeline) {
       expect(Object.keys(event).sort()).toEqual([
         "eventAt",

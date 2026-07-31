@@ -10,6 +10,7 @@ const globalDatabase = globalThis as unknown as {
 function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg({
     connectionString: env.DATABASE_URL,
+    options: "-c timezone=UTC",
   });
 
   return new PrismaClient({

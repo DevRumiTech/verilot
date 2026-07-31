@@ -32,10 +32,22 @@ describe("authentication tokens", () => {
       sessionId: randomUUID(),
       userId: randomUUID(),
     });
-    const finalCharacter = token.at(-1);
-    const replacement = finalCharacter === "a" ? "b" : "a";
+    const [header, payload, signature] = token.split(".");
 
-    await expect(verifyAuthToken(`${token.slice(0, -1)}${replacement}`)).resolves.toBeNull();
+    if (!header || !payload || !signature) {
+      throw new Error("Expected a three-part authentication token.");
+    }
+
+    const firstSignatureCharacter = signature[0];
+
+    if (firstSignatureCharacter === undefined) {
+      throw new Error("Expected a token signature.");
+    }
+
+    const replacement = firstSignatureCharacter === "a" ? "b" : "a";
+    const modifiedToken = [header, payload, `${replacement}${signature.slice(1)}`].join(".");
+
+    await expect(verifyAuthToken(modifiedToken)).resolves.toBeNull();
   });
 
   it("compares stored authentication hashes without exposing the input", () => {
