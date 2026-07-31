@@ -97,7 +97,7 @@ beforeAll(async () => {
   concurrentProductId = randomUUID();
   concurrentEmail = `event-operator-${suffix}@verilot.local`;
 
-  const [location, foreignLocation] = await prisma.$transaction([
+  const [location, foreignLocation] = await Promise.all([
     prisma.location.create({
       data: {
         canton: "VD",

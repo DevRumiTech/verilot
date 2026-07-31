@@ -7,7 +7,7 @@ import {
   type AlertsResponse,
 } from "@verilot/contracts";
 import { useState, type FormEvent } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router";
 
 import { DetailList } from "../../components/DetailList.js";
 import { Pagination, readEnum, readPage } from "../../components/ListControls.js";

@@ -5,7 +5,7 @@ import {
   type JsonValue,
 } from "@verilot/contracts";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router";
 
 import { DetailList } from "../../components/DetailList.js";
 import { Pagination, readPage } from "../../components/ListControls.js";

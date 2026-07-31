@@ -1,6 +1,6 @@
 import { API_PATHS, type LocationsResponse } from "@verilot/contracts";
 import { useEffect, useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/ResourceState.js";
 import { useApiResource } from "../../lib/use-api-resource.js";

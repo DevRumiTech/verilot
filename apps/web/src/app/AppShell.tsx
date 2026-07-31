@@ -1,6 +1,6 @@
 import { PERMISSIONS, type Permission } from "@verilot/contracts";
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router";
 
 import { useSession } from "../auth/SessionProvider.js";
 import { moveKeyboardPosition } from "../lib/keyboard.js";

@@ -68,7 +68,7 @@ beforeAll(async () => {
 
   searchValue = randomUUID().slice(0, 8);
 
-  const [ownLocation, globalLocation, foreignLocation] = await prisma.$transaction([
+  const [ownLocation, globalLocation, foreignLocation] = await Promise.all([
     prisma.location.create({
       data: {
         canton: "JU",

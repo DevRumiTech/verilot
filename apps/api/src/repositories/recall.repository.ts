@@ -166,7 +166,7 @@ export const recallRepository: RecallRepository = {
   async list(input) {
     const where = buildWhere(input);
 
-    const [recalls, totalItems] = await prisma.$transaction([
+    const [recalls, totalItems] = await Promise.all([
       prisma.recall.findMany({
         orderBy: [{ announcedAt: "desc" }, { id: "desc" }],
         select: recallSummarySelect,

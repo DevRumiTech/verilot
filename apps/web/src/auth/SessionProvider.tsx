@@ -13,7 +13,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router";
 
 import { apiClient, ApiClientError, type ApiClient } from "../lib/api-client.js";
 import { AuthApi, authApi, type SignInCredentials } from "./auth-api.js";

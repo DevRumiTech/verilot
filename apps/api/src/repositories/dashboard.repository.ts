@@ -110,7 +110,7 @@ export const dashboardRepository: DashboardRepository = {
       recentAlerts,
       verificationCounts,
       verificationTrend,
-    ] = await prisma.$transaction([
+    ] = await Promise.all([
       prisma.product.groupBy({
         _count: true,
         by: ["status"],

@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router";
 
 import { useSession } from "../auth/SessionProvider.js";
 import { ApiClientError } from "../lib/api-client.js";

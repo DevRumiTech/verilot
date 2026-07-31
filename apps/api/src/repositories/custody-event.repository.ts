@@ -78,6 +78,22 @@ export type CreateCustodyEventResult =
       message?: string;
     };
 
+type CustodyEventTransactionResult =
+  | {
+      eventId: string;
+      kind: "created" | "replayed";
+      productStatus: ProductStatusValue;
+    }
+  | {
+      kind:
+        | "corrected-event-not-found"
+        | "idempotency-conflict"
+        | "invalid-transition"
+        | "location-not-found"
+        | "product-not-found";
+      message?: string;
+    };
+
 export interface CustodyEventRepository {
   create(input: CreateCustodyEventInput): Promise<CreateCustodyEventResult>;
 }
@@ -199,8 +215,8 @@ async function acquireLock(
 
 export const custodyEventRepository: CustodyEventRepository = {
   async create(input) {
-    return prisma.$transaction(
-      async (transaction) => {
+    const result: CustodyEventTransactionResult = await prisma.$transaction(
+      async (transaction): Promise<CustodyEventTransactionResult> => {
         const scope = `custody-event:${input.productId}`;
 
         await acquireLock(
@@ -236,7 +252,9 @@ export const custodyEventRepository: CustodyEventRepository = {
           }
 
           const event = await transaction.custodyEvent.findUnique({
-            select: custodyEventSelect,
+            select: {
+              id: true,
+            },
             where: {
               id: storedResponse.eventId,
             },
@@ -249,7 +267,7 @@ export const custodyEventRepository: CustodyEventRepository = {
           }
 
           return {
-            event,
+            eventId: event.id,
             kind: "replayed",
             productStatus: storedResponse.productStatus,
           };
@@ -376,7 +394,11 @@ export const custodyEventRepository: CustodyEventRepository = {
                 }),
             type: input.type,
           },
-          select: custodyEventSelect,
+          select: {
+            eventAt: true,
+            id: true,
+            type: true,
+          },
         });
 
         if (input.type === "BLOCKED") {
@@ -458,7 +480,7 @@ export const custodyEventRepository: CustodyEventRepository = {
         });
 
         return {
-          event,
+          eventId: event.id,
           kind: "created",
           productStatus: transition.status,
         };
@@ -468,5 +490,22 @@ export const custodyEventRepository: CustodyEventRepository = {
         timeout: 20_000,
       },
     );
+
+    if (!("eventId" in result)) {
+      return result;
+    }
+
+    const event = await prisma.custodyEvent.findUniqueOrThrow({
+      select: custodyEventSelect,
+      where: {
+        id: result.eventId,
+      },
+    });
+
+    return {
+      event,
+      kind: result.kind,
+      productStatus: result.productStatus,
+    };
   },
 };

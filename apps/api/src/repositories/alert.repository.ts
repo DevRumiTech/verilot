@@ -170,7 +170,7 @@ export const alertRepository: AlertRepository = {
   async list(input) {
     const where = buildWhere(input);
 
-    const [alerts, totalItems] = await prisma.$transaction([
+    const [alerts, totalItems] = await Promise.all([
       prisma.alert.findMany({
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: alertSummarySelect,

@@ -1,5 +1,5 @@
 import { PERMISSIONS } from "@verilot/contracts";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router";
 
 import { AppShell } from "./AppShell.js";
 import { NotFoundPage } from "./NotFoundPage.js";

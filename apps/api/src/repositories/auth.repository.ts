@@ -62,8 +62,8 @@ export interface AuthRepository {
 
 export const authRepository: AuthRepository = {
   async createSession(input) {
-    await prisma.$transaction([
-      prisma.authSession.create({
+    await prisma.$transaction(async (transaction) => {
+      await transaction.authSession.create({
         data: {
           csrfHash: input.csrfHash,
           expiresAt: input.expiresAt,
@@ -71,16 +71,16 @@ export const authRepository: AuthRepository = {
           tokenHash: input.tokenHash,
           userId: input.userId,
         },
-      }),
-      prisma.user.update({
+      });
+      await transaction.user.update({
         data: {
           lastSignedInAt: input.signedInAt,
         },
         where: {
           id: input.userId,
         },
-      }),
-    ]);
+      });
+    });
   },
 
   async findActiveSession(input) {

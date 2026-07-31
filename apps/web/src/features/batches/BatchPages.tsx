@@ -5,7 +5,7 @@ import {
   type BatchesResponse,
 } from "@verilot/contracts";
 import { useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router";
 
 import { DetailList } from "../../components/DetailList.js";
 import { buildListPath, ListControls, Pagination } from "../../components/ListControls.js";

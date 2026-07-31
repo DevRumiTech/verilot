@@ -37,7 +37,10 @@
     "typescript": "7.0.2"
   },
   "allowScripts": {
+    "@scarf/scarf@1.4.0": false,
     "esbuild@0.28.1": true,
+    "fsevents@2.3.2": true,
+    "fsevents@2.3.3": true,
     "@prisma/engines@7.9.1": true,
     "prisma@7.9.1": true
   }

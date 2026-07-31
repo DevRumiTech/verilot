@@ -138,7 +138,7 @@ export const auditRecordRepository: AuditRecordRepository = {
   async list(input) {
     const where = buildWhere(input);
 
-    const [auditRecords, totalItems] = await prisma.$transaction([
+    const [auditRecords, totalItems] = await Promise.all([
       prisma.auditRecord.findMany({
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: auditRecordSummarySelect,

@@ -180,7 +180,7 @@ export const productRepository: ProductRepository = {
   async list(input) {
     const where = buildWhere(input);
 
-    const [products, totalItems] = await prisma.$transaction([
+    const [products, totalItems] = await Promise.all([
       prisma.product.findMany({
         orderBy: [
           {

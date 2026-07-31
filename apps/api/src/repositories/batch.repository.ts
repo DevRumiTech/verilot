@@ -102,7 +102,7 @@ export const batchRepository: BatchRepository = {
   async list(input) {
     const where = buildWhere(input);
 
-    const [batches, totalItems] = await prisma.$transaction([
+    const [batches, totalItems] = await Promise.all([
       prisma.batch.findMany({
         orderBy: [{ createdAt: "desc" }, { code: "asc" }],
         select: batchSummarySelect,

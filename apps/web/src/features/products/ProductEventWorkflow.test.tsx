@@ -7,7 +7,7 @@ import type {
 } from "@verilot/contracts";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router";
 
 import { AuthApi } from "../../auth/auth-api.js";
 import { SessionProvider } from "../../auth/SessionProvider.js";

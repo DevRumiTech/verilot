@@ -1,7 +1,7 @@
 import { API_PATHS, type AuthSessionResponse, type DashboardSummary } from "@verilot/contracts";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router";
 
 import { DashboardPage } from "./DashboardPage.js";
 import { AuthApi } from "../../auth/auth-api.js";

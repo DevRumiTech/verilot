@@ -7,7 +7,7 @@ import {
   VERIFICATION_RESULTS,
   type DashboardSummary,
 } from "@verilot/contracts";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/ResourceState.js";
 import { readableLabel, StatusBadge } from "../../components/StatusBadge.js";
