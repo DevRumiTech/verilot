@@ -81,6 +81,10 @@ export const openApiDocument = {
       name: "Recalls",
     },
     {
+      description: "Administrator-only organization audit history.",
+      name: "Audit records",
+    },
+    {
       description: "Organization batch records.",
       name: "Batches",
     },
@@ -509,6 +513,168 @@ export const openApiDocument = {
         ],
         summary: "Get organization recall",
         tags: ["Recalls"],
+      },
+    },
+    [API_PATHS.auditRecords]: {
+      get: {
+        description:
+          "Requires the audit-records:read permission, which is assigned only to administrators.",
+        operationId: "listAuditRecords",
+        parameters: [
+          {
+            in: "query",
+            name: "page",
+            schema: {
+              default: 1,
+              maximum: 10_000,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "pageSize",
+            schema: {
+              default: 20,
+              maximum: 100,
+              minimum: 1,
+              type: "integer",
+            },
+          },
+          {
+            in: "query",
+            name: "action",
+            schema: {
+              maxLength: 100,
+              minLength: 1,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "entityType",
+            schema: {
+              maxLength: 80,
+              minLength: 1,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "entityId",
+            schema: {
+              maxLength: 100,
+              minLength: 1,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "actorId",
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "requestId",
+            schema: {
+              maxLength: 100,
+              minLength: 1,
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "createdFrom",
+            schema: {
+              format: "date-time",
+              type: "string",
+            },
+          },
+          {
+            in: "query",
+            name: "createdTo",
+            schema: {
+              format: "date-time",
+              type: "string",
+            },
+          },
+          {
+            description:
+              "Match action, entity type, entity identifier, actor email, reason, or request identifier.",
+            in: "query",
+            name: "search",
+            schema: {
+              maxLength: 100,
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AuditRecordsEnvelope",
+                },
+              },
+            },
+            description: "Organization audit summaries returned.",
+          },
+          "400": errorResponse("Query values rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Administrator permission required."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "List organization audit records",
+        tags: ["Audit records"],
+      },
+    },
+    [`${API_PATHS.auditRecords}/{auditRecordId}`]: {
+      get: {
+        description:
+          "Requires administrator permission. Sensitive keys in beforeData and afterData are recursively redacted in the response.",
+        operationId: "getAuditRecord",
+        parameters: [
+          {
+            in: "path",
+            name: "auditRecordId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/AuditRecordEnvelope",
+                },
+              },
+            },
+            description: "Organization audit record returned.",
+          },
+          "400": errorResponse("Audit record identifier rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Administrator permission required."),
+          "404": errorResponse("Audit record not found."),
+        },
+        security: [
+          {
+            sessionCookie: [],
+          },
+        ],
+        summary: "Get organization audit record",
+        tags: ["Audit records"],
       },
     },
     [API_PATHS.batches]: {
@@ -1418,6 +1584,145 @@ export const openApiDocument = {
               },
             },
             required: ["alert"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      AuditActorReference: {
+        additionalProperties: false,
+        properties: {
+          displayName: {
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+        },
+        required: ["displayName", "id"],
+        type: "object",
+      },
+      AuditRecordSummary: {
+        additionalProperties: false,
+        properties: {
+          action: {
+            type: "string",
+          },
+          actor: {
+            oneOf: [
+              {
+                $ref: "#/components/schemas/AuditActorReference",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          actorEmail: {
+            type: ["null", "string"],
+          },
+          actorRole: {
+            oneOf: [
+              {
+                enum: ["ADMINISTRATOR", "OPERATOR", "INSPECTOR"],
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          createdAt: {
+            format: "date-time",
+            type: "string",
+          },
+          entityId: {
+            type: "string",
+          },
+          entityType: {
+            type: "string",
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          reason: {
+            type: ["null", "string"],
+          },
+          requestId: {
+            type: "string",
+          },
+        },
+        required: [
+          "action",
+          "actor",
+          "actorEmail",
+          "actorRole",
+          "createdAt",
+          "entityId",
+          "entityType",
+          "id",
+          "reason",
+          "requestId",
+        ],
+        type: "object",
+      },
+      AuditRecordDetail: {
+        allOf: [
+          {
+            $ref: "#/components/schemas/AuditRecordSummary",
+          },
+          {
+            additionalProperties: false,
+            properties: {
+              afterData: {
+                type: ["array", "boolean", "null", "number", "object", "string"],
+              },
+              beforeData: {
+                type: ["array", "boolean", "null", "number", "object", "string"],
+              },
+            },
+            required: ["afterData", "beforeData"],
+            type: "object",
+          },
+        ],
+      },
+      AuditRecordsEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              auditRecords: {
+                items: {
+                  $ref: "#/components/schemas/AuditRecordSummary",
+                },
+                type: "array",
+              },
+              pagination: {
+                $ref: "#/components/schemas/PaginationMetadata",
+              },
+            },
+            required: ["auditRecords", "pagination"],
+            type: "object",
+          },
+        },
+        required: ["data"],
+        type: "object",
+      },
+      AuditRecordEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              auditRecord: {
+                $ref: "#/components/schemas/AuditRecordDetail",
+              },
+            },
+            required: ["auditRecord"],
             type: "object",
           },
         },

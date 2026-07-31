@@ -24,6 +24,8 @@ describe("API documentation", () => {
         API_PATHS.auth.session,
         API_PATHS.alerts,
         `${API_PATHS.alerts}/{alertId}`,
+        API_PATHS.auditRecords,
+        `${API_PATHS.auditRecords}/{auditRecordId}`,
         API_PATHS.batches,
         `${API_PATHS.batches}/{batchId}`,
         API_PATHS.products,

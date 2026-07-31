@@ -6,6 +6,7 @@ import { errorHandler } from "./middleware/error-handler.js";
 import { notFoundHandler } from "./middleware/not-found.js";
 import { requestContext } from "./middleware/request-context.js";
 import { alertRouter } from "./routes/alert.routes.js";
+import { auditRecordRouter } from "./routes/audit-record.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { batchRouter } from "./routes/batch.routes.js";
 import { docsRouter } from "./routes/docs.routes.js";
@@ -29,6 +30,7 @@ export function createApp() {
   app.use(systemRouter);
   app.use(authRouter);
   app.use(alertRouter);
+  app.use(auditRecordRouter);
   app.use(batchRouter);
   app.use(productRouter);
   app.use(recallRouter);

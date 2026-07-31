@@ -4,6 +4,7 @@ export type UserRole = (typeof USER_ROLES)[number];
 
 export const PERMISSIONS = {
   alertsRead: "alerts:read",
+  auditRecordsRead: "audit-records:read",
   batchesRead: "batches:read",
   productsRead: "products:read",
   productEventsWrite: "product-events:write",
@@ -17,6 +18,7 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly Permission[]>> = {
   ADMINISTRATOR: [
     PERMISSIONS.alertsRead,
+    PERMISSIONS.auditRecordsRead,
     PERMISSIONS.batchesRead,
     PERMISSIONS.productsRead,
     PERMISSIONS.productEventsWrite,

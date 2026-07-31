@@ -10,6 +10,7 @@ export const CSRF_HEADER_NAME = "x-csrf-token";
 
 export const API_PATHS = {
   alerts: `${API_PREFIX}/alerts`,
+  auditRecords: `${API_PREFIX}/audit-records`,
   batches: `${API_PREFIX}/batches`,
   products: `${API_PREFIX}/products`,
   recalls: `${API_PREFIX}/recalls`,
