@@ -1140,7 +1140,7 @@ button:disabled {
   display: none;
 }
 
-@media (max-width: 47.99rem) {
+@media (max-width: 48rem) {
   .auth-layout {
     grid-template-columns: minmax(0, 1fr);
     align-content: start;

@@ -105,7 +105,7 @@ export class ApiClient {
 
   constructor(options: { baseUrl?: string; fetchImplementation?: FetchImplementation } = {}) {
     this.baseUrl = resolveBaseUrl(options.baseUrl);
-    this.fetchImplementation = options.fetchImplementation ?? fetch;
+    this.fetchImplementation = options.fetchImplementation ?? globalThis.fetch.bind(globalThis);
   }
 
   clearCsrfToken(): void {

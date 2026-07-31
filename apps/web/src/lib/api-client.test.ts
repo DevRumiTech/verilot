@@ -10,6 +10,22 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 describe("ApiClient", () => {
+  it("binds the native browser request function to the global receiver", async () => {
+    const browserFetch = vi.fn(function (this: typeof globalThis) {
+      expect(this).toBe(globalThis);
+      return Promise.resolve(jsonResponse({ data: { value: 42 } }));
+    }) as unknown as typeof fetch;
+    vi.stubGlobal("fetch", browserFetch);
+
+    try {
+      const client = new ApiClient();
+      await expect(client.request<{ value: number }>("/resource")).resolves.toEqual({ value: 42 });
+      expect(browserFetch).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("reads successful data envelopes and includes credentials", async () => {
     const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({
