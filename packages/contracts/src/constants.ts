@@ -4,6 +4,10 @@ export const API_VERSION = "v1";
 
 export const API_PREFIX = `/api/${API_VERSION}` as const;
 
+export const API_PATHS = {
+  verification: `${API_PREFIX}/verification`,
+} as const;
+
 export const SYSTEM_PATHS = {
   docs: "/api/docs",
   health: "/api/health",

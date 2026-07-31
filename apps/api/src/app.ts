@@ -6,6 +6,7 @@ import { errorHandler } from "./middleware/error-handler.js";
 import { notFoundHandler } from "./middleware/not-found.js";
 import { requestContext } from "./middleware/request-context.js";
 import { systemRouter } from "./routes/system.routes.js";
+import { verificationRouter } from "./routes/verification.routes.js";
 
 export function createApp() {
   const app = express();
@@ -17,6 +18,7 @@ export function createApp() {
   app.use(express.json({ limit: "100kb" }));
 
   app.use(systemRouter);
+  app.use(verificationRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
