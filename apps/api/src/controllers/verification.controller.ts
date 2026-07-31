@@ -1,8 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 
-import { ApiError, type FieldErrors } from "../errors/api-error.js";
+import { ApiError } from "../errors/api-error.js";
 import { verificationService } from "../services/verification.service.js";
+import { toFieldErrors } from "../validation/zod.js";
 
 const verificationParamsSchema = z.object({
   serialNumber: z
@@ -11,19 +12,6 @@ const verificationParamsSchema = z.object({
     .toUpperCase()
     .regex(/^VL-\d{4}-\d{6}$/, "Use the format VL-YYYY-NNNNNN."),
 });
-
-function toFieldErrors(error: z.ZodError): FieldErrors {
-  const fieldErrors: Record<string, string[]> = {};
-
-  for (const issue of error.issues) {
-    const field = issue.path.join(".") || "request";
-    const messages = fieldErrors[field] ?? [];
-    messages.push(issue.message);
-    fieldErrors[field] = messages;
-  }
-
-  return fieldErrors;
-}
 
 export async function getPublicVerification(
   request: Request,

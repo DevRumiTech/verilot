@@ -6,9 +6,11 @@ const environmentSchema = z.object({
   DATA_HASH_SECRET: z.string().min(32),
   DATABASE_URL: z.url().startsWith("postgresql://"),
   HOST: z.string().trim().min(1).default("127.0.0.1"),
+  JWT_SECRET: z.string().min(32),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().max(65_535).default(4_000),
+  SESSION_TTL_HOURS: z.coerce.number().int().positive().max(168).default(8),
 });
 
 const result = environmentSchema.safeParse(process.env);
