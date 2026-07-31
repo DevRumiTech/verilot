@@ -162,6 +162,7 @@ describe("product APIs", () => {
       .query({
         page: 1,
         pageSize: 10,
+        search: "VL-2026-",
       })
       .set("Cookie", cookie)
       .expect(200);

@@ -42,3 +42,28 @@ export interface RecallsResponse {
 export interface RecallDetailResponse {
   recall: RecallDetail;
 }
+
+export interface CreateRecallRequest {
+  batchId: string;
+  idempotencyKey: string;
+  reason: string;
+  reference: string;
+}
+
+export interface CompleteRecallRequest {
+  idempotencyKey: string;
+}
+
+export interface RecallWorkflowState {
+  announcedAt: string;
+  batchId: string;
+  completedAt: string | null;
+  id: string;
+  reference: string;
+  status: RecallStatus;
+}
+
+export interface RecallWorkflowMutationResponse {
+  recall: RecallWorkflowState;
+  replayed: boolean;
+}

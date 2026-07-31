@@ -36,6 +36,7 @@ describe("API documentation", () => {
         `${API_PATHS.products}/{productId}/events`,
         API_PATHS.recalls,
         `${API_PATHS.recalls}/{recallId}`,
+        `${API_PATHS.recalls}/{recallId}/complete`,
         API_PATHS.locations,
         API_PATHS.users,
         `${API_PATHS.verification}/{serialNumber}`,

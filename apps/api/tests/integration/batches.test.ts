@@ -133,6 +133,7 @@ describe("batch APIs", () => {
       .query({
         page: 1,
         pageSize: 5,
+        search: "VL-BATCH-2026-",
       })
       .set("Cookie", cookie)
       .expect(200);

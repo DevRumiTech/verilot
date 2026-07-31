@@ -634,6 +634,46 @@ export const openApiDocument = {
         summary: "List organization recalls",
         tags: ["Recalls"],
       },
+      post: {
+        description:
+          "Creates and immediately announces an active recall. Requires trusted browser origin, session authentication, CSRF validation, and recalls:manage permission.",
+        operationId: "createRecall",
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/CreateRecallRequest",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "201": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/RecallWorkflowEnvelope",
+                },
+              },
+            },
+            description: "Recall creation or idempotent replay returned.",
+          },
+          "400": errorResponse("Request data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Origin, CSRF token, or permission rejected."),
+          "404": errorResponse("Batch not found."),
+          "409": errorResponse("Transition, reference, or idempotency conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Create and announce a recall",
+        tags: ["Recalls"],
+      },
     },
     [`${API_PATHS.recalls}/{recallId}`]: {
       get: {
@@ -671,6 +711,59 @@ export const openApiDocument = {
           },
         ],
         summary: "Get organization recall",
+        tags: ["Recalls"],
+      },
+    },
+    [`${API_PATHS.recalls}/{recallId}/complete`]: {
+      post: {
+        description:
+          "Completes an active recall without removing recall, custody, or audit history. Requires trusted browser origin, session authentication, CSRF validation, and recalls:manage permission.",
+        operationId: "completeRecall",
+        parameters: [
+          {
+            in: "path",
+            name: "recallId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/CompleteRecallRequest",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/RecallWorkflowEnvelope",
+                },
+              },
+            },
+            description: "Recall completion or idempotent replay returned.",
+          },
+          "400": errorResponse("Request data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Origin, CSRF token, or permission rejected."),
+          "404": errorResponse("Recall not found."),
+          "409": errorResponse("Transition or idempotency conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Complete an active recall",
         tags: ["Recalls"],
       },
     },
@@ -2048,6 +2141,103 @@ export const openApiDocument = {
           },
         },
         required: ["displayName", "id"],
+        type: "object",
+      },
+      CreateRecallRequest: {
+        additionalProperties: false,
+        properties: {
+          batchId: {
+            format: "uuid",
+            type: "string",
+          },
+          idempotencyKey: {
+            maxLength: 120,
+            minLength: 8,
+            pattern: "^[A-Za-z0-9._:-]+$",
+            type: "string",
+          },
+          reason: {
+            maxLength: 1000,
+            minLength: 1,
+            type: "string",
+          },
+          reference: {
+            maxLength: 60,
+            minLength: 1,
+            type: "string",
+          },
+        },
+        required: ["batchId", "idempotencyKey", "reason", "reference"],
+        type: "object",
+      },
+      CompleteRecallRequest: {
+        additionalProperties: false,
+        properties: {
+          idempotencyKey: {
+            maxLength: 120,
+            minLength: 8,
+            pattern: "^[A-Za-z0-9._:-]+$",
+            type: "string",
+          },
+        },
+        required: ["idempotencyKey"],
+        type: "object",
+      },
+      RecallWorkflowState: {
+        additionalProperties: false,
+        properties: {
+          announcedAt: {
+            format: "date-time",
+            type: "string",
+          },
+          batchId: {
+            format: "uuid",
+            type: "string",
+          },
+          completedAt: {
+            oneOf: [
+              {
+                format: "date-time",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          reference: {
+            type: "string",
+          },
+          status: {
+            enum: RECALL_STATUSES,
+            type: "string",
+          },
+        },
+        required: ["announcedAt", "batchId", "completedAt", "id", "reference", "status"],
+        type: "object",
+      },
+      RecallWorkflowEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              recall: {
+                $ref: "#/components/schemas/RecallWorkflowState",
+              },
+              replayed: {
+                type: "boolean",
+              },
+            },
+            required: ["recall", "replayed"],
+            type: "object",
+          },
+        },
+        required: ["data"],
         type: "object",
       },
       RecallSummary: {
