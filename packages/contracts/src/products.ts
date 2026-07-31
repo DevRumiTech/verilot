@@ -76,6 +76,35 @@ export interface ProductCustodyEvent {
   type: EventType;
 }
 
+export type JsonPrimitive = boolean | null | number | string;
+
+export type JsonValue =
+  | JsonPrimitive
+  | readonly JsonValue[]
+  | {
+      readonly [key: string]: JsonValue;
+    };
+
+export interface CreateProductEventRequest {
+  correctedEventId?: string;
+  eventAt: string;
+  idempotencyKey: string;
+  locationId?: string;
+  metadata?: {
+    readonly [key: string]: JsonPrimitive;
+  };
+  notes?: string;
+  shipmentReference?: string;
+  transportMode?: TransportMode;
+  type: EventType;
+}
+
+export interface ProductEventMutationResponse {
+  event: ProductCustodyEvent;
+  productStatus: ProductStatus;
+  replayed: boolean;
+}
+
 export interface ProductDetail extends ProductSummary {
   custodyEvents: readonly ProductCustodyEvent[];
 }
