@@ -6,6 +6,8 @@ import { NotFoundPage } from "./NotFoundPage.js";
 import { SignInPage } from "./SignInPage.js";
 import { AuthGuard } from "../auth/SessionProvider.js";
 import { DashboardPage } from "../features/dashboard/DashboardPage.js";
+import { BatchDetailPage, BatchListPage } from "../features/batches/BatchPages.js";
+import { ProductDetailPage, ProductListPage } from "../features/products/ProductPages.js";
 
 function PendingPage({ description, title }: { description: string; title: string }) {
   return (
@@ -36,24 +38,10 @@ export function App() {
       >
         <Route index element={<Navigate replace to="/dashboard" />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route
-          path="products/*"
-          element={
-            <PendingPage
-              description="Review serialized products and their append-only custody history."
-              title="Products"
-            />
-          }
-        />
-        <Route
-          path="batches/*"
-          element={
-            <PendingPage
-              description="Review manufacturing lots and product activation state."
-              title="Batches"
-            />
-          }
-        />
+        <Route path="products" element={<ProductListPage />} />
+        <Route path="products/:productId" element={<ProductDetailPage />} />
+        <Route path="batches" element={<BatchListPage />} />
+        <Route path="batches/:batchId" element={<BatchDetailPage />} />
         <Route
           path="alerts/*"
           element={
