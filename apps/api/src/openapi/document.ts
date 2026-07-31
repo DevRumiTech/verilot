@@ -6,6 +6,7 @@ import {
   APPLICATION_NAME,
   AUTH_COOKIE_NAME,
   CSRF_HEADER_NAME,
+  MAX_BATCH_PRODUCT_COUNT,
   RECALL_STATUSES,
   SYSTEM_PATHS,
 } from "@verilot/contracts";
@@ -992,6 +993,45 @@ export const openApiDocument = {
         summary: "List organization batches",
         tags: ["Batches"],
       },
+      post: {
+        description:
+          "Creates a draft batch. Serial ranges are limited to prevent excessive product generation during activation. Requires trusted browser origin, session authentication, CSRF validation, and batches:write permission.",
+        operationId: "createBatch",
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/CreateBatchRequest",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "201": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/BatchWorkflowEnvelope",
+                },
+              },
+            },
+            description: "Batch creation or idempotent replay returned.",
+          },
+          "400": errorResponse("Request data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Origin, CSRF token, or permission rejected."),
+          "409": errorResponse("Batch identity or idempotency conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Create a draft batch",
+        tags: ["Batches"],
+      },
     },
     [`${API_PATHS.batches}/{batchId}`]: {
       get: {
@@ -1029,6 +1069,112 @@ export const openApiDocument = {
           },
         ],
         summary: "Get organization batch",
+        tags: ["Batches"],
+      },
+    },
+    [`${API_PATHS.batches}/{batchId}/activate`]: {
+      post: {
+        description:
+          "Activates a draft batch and atomically creates missing product identities for its configured serial range. Requires trusted browser origin, session authentication, CSRF validation, and batches:write permission.",
+        operationId: "activateBatch",
+        parameters: [
+          {
+            in: "path",
+            name: "batchId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/ChangeBatchStatusRequest",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/BatchWorkflowEnvelope",
+                },
+              },
+            },
+            description: "Batch activation or idempotent replay returned.",
+          },
+          "400": errorResponse("Request data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Origin, CSRF token, or permission rejected."),
+          "404": errorResponse("Batch not found."),
+          "409": errorResponse("Transition, serial identity, or idempotency conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Activate a draft batch",
+        tags: ["Batches"],
+      },
+    },
+    [`${API_PATHS.batches}/{batchId}/close`]: {
+      post: {
+        description:
+          "Closes an active batch without removing its products or history. Requires trusted browser origin, session authentication, CSRF validation, and batches:write permission.",
+        operationId: "closeBatch",
+        parameters: [
+          {
+            in: "path",
+            name: "batchId",
+            required: true,
+            schema: {
+              format: "uuid",
+              type: "string",
+            },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/ChangeBatchStatusRequest",
+              },
+            },
+          },
+          required: true,
+        },
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/BatchWorkflowEnvelope",
+                },
+              },
+            },
+            description: "Batch closure or idempotent replay returned.",
+          },
+          "400": errorResponse("Request data rejected."),
+          "401": errorResponse("Authentication required."),
+          "403": errorResponse("Origin, CSRF token, or permission rejected."),
+          "404": errorResponse("Batch not found."),
+          "409": errorResponse("Transition or idempotency conflict."),
+        },
+        security: [
+          {
+            csrfHeader: [],
+            sessionCookie: [],
+          },
+        ],
+        summary: "Close an active batch",
         tags: ["Batches"],
       },
     },
@@ -2427,6 +2573,187 @@ export const openApiDocument = {
           "sku",
           "status",
         ],
+        type: "object",
+      },
+      CreateBatchRequest: {
+        additionalProperties: false,
+        properties: {
+          code: {
+            maxLength: 50,
+            minLength: 1,
+            type: "string",
+          },
+          expiresAt: {
+            format: "date",
+            type: "string",
+          },
+          idempotencyKey: {
+            maxLength: 120,
+            minLength: 8,
+            pattern: "^[A-Za-z0-9._:-]+$",
+            type: "string",
+          },
+          lotNumber: {
+            maxLength: 80,
+            minLength: 1,
+            type: "string",
+          },
+          manufacturedAt: {
+            format: "date",
+            type: "string",
+          },
+          productName: {
+            maxLength: 160,
+            minLength: 1,
+            type: "string",
+          },
+          serialEnd: {
+            description: `Must produce no more than ${MAX_BATCH_PRODUCT_COUNT} identities when combined with serialStart.`,
+            maximum: 999_999,
+            minimum: 1,
+            type: "integer",
+          },
+          serialPrefix: {
+            maxLength: 24,
+            minLength: 1,
+            pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+            type: "string",
+          },
+          serialStart: {
+            maximum: 999_999,
+            minimum: 1,
+            type: "integer",
+          },
+          sku: {
+            maxLength: 80,
+            minLength: 1,
+            type: "string",
+          },
+        },
+        required: [
+          "code",
+          "idempotencyKey",
+          "lotNumber",
+          "manufacturedAt",
+          "productName",
+          "serialEnd",
+          "serialPrefix",
+          "serialStart",
+          "sku",
+        ],
+        type: "object",
+      },
+      ChangeBatchStatusRequest: {
+        additionalProperties: false,
+        properties: {
+          idempotencyKey: {
+            maxLength: 120,
+            minLength: 8,
+            pattern: "^[A-Za-z0-9._:-]+$",
+            type: "string",
+          },
+        },
+        required: ["idempotencyKey"],
+        type: "object",
+      },
+      BatchWorkflowState: {
+        additionalProperties: false,
+        properties: {
+          activatedAt: {
+            oneOf: [
+              {
+                format: "date-time",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          code: {
+            type: "string",
+          },
+          expiresAt: {
+            oneOf: [
+              {
+                format: "date",
+                type: "string",
+              },
+              {
+                type: "null",
+              },
+            ],
+          },
+          id: {
+            format: "uuid",
+            type: "string",
+          },
+          lotNumber: {
+            type: "string",
+          },
+          manufacturedAt: {
+            format: "date",
+            type: "string",
+          },
+          productCount: {
+            minimum: 0,
+            type: "integer",
+          },
+          productName: {
+            type: "string",
+          },
+          serialEnd: {
+            type: "integer",
+          },
+          serialPrefix: {
+            type: "string",
+          },
+          serialStart: {
+            type: "integer",
+          },
+          sku: {
+            type: "string",
+          },
+          status: {
+            enum: ["DRAFT", "ACTIVE", "RECALLED", "CLOSED"],
+            type: "string",
+          },
+        },
+        required: [
+          "activatedAt",
+          "code",
+          "expiresAt",
+          "id",
+          "lotNumber",
+          "manufacturedAt",
+          "productCount",
+          "productName",
+          "serialEnd",
+          "serialPrefix",
+          "serialStart",
+          "sku",
+          "status",
+        ],
+        type: "object",
+      },
+      BatchWorkflowEnvelope: {
+        additionalProperties: false,
+        properties: {
+          data: {
+            additionalProperties: false,
+            properties: {
+              batch: {
+                $ref: "#/components/schemas/BatchWorkflowState",
+              },
+              replayed: {
+                type: "boolean",
+              },
+            },
+            required: ["batch", "replayed"],
+            type: "object",
+          },
+        },
+        required: ["data"],
         type: "object",
       },
       PaginationMetadata: {

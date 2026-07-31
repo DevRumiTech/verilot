@@ -7,6 +7,7 @@ export const PERMISSIONS = {
   alertsRead: "alerts:read",
   auditRecordsRead: "audit-records:read",
   batchesRead: "batches:read",
+  batchesWrite: "batches:write",
   productsRead: "products:read",
   productEventsWrite: "product-events:write",
   recallsManage: "recalls:manage",
@@ -23,6 +24,7 @@ export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly Permission[]>>
     PERMISSIONS.alertsRead,
     PERMISSIONS.auditRecordsRead,
     PERMISSIONS.batchesRead,
+    PERMISSIONS.batchesWrite,
     PERMISSIONS.productsRead,
     PERMISSIONS.productEventsWrite,
     PERMISSIONS.recallsManage,
@@ -33,6 +35,7 @@ export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly Permission[]>>
   OPERATOR: [
     PERMISSIONS.alertsRead,
     PERMISSIONS.batchesRead,
+    PERMISSIONS.batchesWrite,
     PERMISSIONS.productsRead,
     PERMISSIONS.productEventsWrite,
     PERMISSIONS.recallsRead,

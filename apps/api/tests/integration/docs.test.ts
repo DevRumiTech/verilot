@@ -31,6 +31,8 @@ describe("API documentation", () => {
         `${API_PATHS.auditRecords}/{auditRecordId}`,
         API_PATHS.batches,
         `${API_PATHS.batches}/{batchId}`,
+        `${API_PATHS.batches}/{batchId}/activate`,
+        `${API_PATHS.batches}/{batchId}/close`,
         API_PATHS.products,
         `${API_PATHS.products}/{productId}`,
         `${API_PATHS.products}/{productId}/events`,
